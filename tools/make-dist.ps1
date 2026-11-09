@@ -1,5 +1,5 @@
 # Builds a customer package: dist\APIQualityStudio-<version>\  (bundled Java runtime when jpackage is available) and a zip.
-param([string]$Version = "1.0.0")
+param([string]$Version = "1.0.0", [string]$CertThumbprint = "", [string]$TimestampUrl = "http://timestamp.digicert.com")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
@@ -58,6 +58,14 @@ Everything runs on this computer. Nothing is sent anywhere. Use it only on syste
 Projects and reports are stored in %USERPROFILE%\APIQualityStudio-data.
 Pipelines: studio-cli.bat run PROJECT --min-pass-rate 90 --junit studio-junit.xml (exit code 0 = passed).
 "@ | Set-Content -Encoding ASCII "$out\README-FIRST.txt"
+
+if (Get-ChildItem $out -Recurse -Include "license-private.key","*private*.key" -ErrorAction SilentlyContinue) { throw "A licence private key is inside the package. Remove it before shipping." }
+if ($CertThumbprint) {
+  Write-Host "signing executables with certificate $CertThumbprint (from the Windows certificate store)"
+  $st = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "x64" } | Sort-Object FullName -Descending | Select-Object -First 1
+  if (-not $st) { throw "signtool.exe not found. Install the Windows SDK, or run without -CertThumbprint for an unsigned package." }
+  Get-ChildItem $out -Recurse -Include *.exe,*.dll | ForEach-Object { & $st.FullName sign /sha1 $CertThumbprint /fd SHA256 /tr $TimestampUrl /td SHA256 $_.FullName | Out-Null; if ($LASTEXITCODE -ne 0) { throw "signing failed for $($_.Name)" } }
+} else { Write-Host "NOTE: package is UNSIGNED (pass -CertThumbprint <thumbprint> once a code-signing certificate is installed)." }
 
 Write-Host "5/5 zip"
 $zip = Join-Path $root "dist\APIQualityStudio-$Version.zip"
