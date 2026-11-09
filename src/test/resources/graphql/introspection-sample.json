@@ -1,0 +1,12 @@
+{"data":{"__schema":{"queryType":{"name":"Query"},"mutationType":{"name":"Mutation"},"types":[
+ {"kind":"OBJECT","name":"Query","fields":[
+  {"name":"user","args":[{"name":"id","type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"ID"}}}],"type":{"kind":"OBJECT","name":"User","ofType":null}},
+  {"name":"users","args":[],"type":{"kind":"LIST","name":null,"ofType":{"kind":"OBJECT","name":"User","ofType":null}}}]},
+ {"kind":"OBJECT","name":"Mutation","fields":[
+  {"name":"createUser","args":[{"name":"input","type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"INPUT_OBJECT","name":"UserInput"}}}],"type":{"kind":"OBJECT","name":"User","ofType":null}}]},
+ {"kind":"OBJECT","name":"User","fields":[
+  {"name":"id","args":[],"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"ID"}}},
+  {"name":"name","args":[],"type":{"kind":"SCALAR","name":"String","ofType":null}},
+  {"name":"role","args":[],"type":{"kind":"ENUM","name":"Role","ofType":null}}]},
+ {"kind":"INPUT_OBJECT","name":"UserInput","inputFields":[{"name":"name","type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"String"}}},{"name":"role","type":{"kind":"ENUM","name":"Role","ofType":null}}]},
+ {"kind":"ENUM","name":"Role","enumValues":[{"name":"ADMIN"},{"name":"USER"}]}]}}}

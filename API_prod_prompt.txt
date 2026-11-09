@@ -1,0 +1,758 @@
+# Architecture & Implementation Blueprint: Universal API Automation Platform
+
+Product vision: Build one commercial API quality platform that allows customers from banking, fintech, e-commerce, healthcare, insurance and other industries to configure or import APIs, automatically generate tests, execute them, monitor performance, validate security controls and produce professional reports — without building a new automation framework for every project.
+
+The guiding principle is:
+
+> One reusable execution engine. Multiple customer projects. Configurable test rules. Minimal project-specific coding.
+
+Your existing Java 17, Rest Assured and Maven engine, together with your API Automation Console, should be the foundation. The current console already has useful execution reporting, request/response visibility, test counts, timings and positive/negative test coverage. Preserve those capabilities and evolve them rather than rewriting the engine.&#x20;
+
+## 1. Product scope and architecture
+
+## Universal API Quality Platform
+
+Multi-customer · Multi-project · Configurable · Extensible
+
+API onboarding
+
+OpenAPI/Swagger, Postman collections, manual configuration
+
+Test generation
+
+Positive, negative, boundary, schema and security test candidates
+
+Execution orchestration
+
+Queues, worker management, schedules, retries and cancellation
+
+Quality engines
+
+Functional, contract, performance and authorized security testing
+
+### Shared platform services
+
+&#x20;Configuration & results
+
+&#x20;Secrets & access control
+
+&#x20;Dashboards & alerts
+
+&#x20;Reports & audit history
+
+### Recommended implementation style
+
+Start with a modular monolith plus isolated execution workers, not dozens of microservices.
+
+- Web application: customer-facing configuration and reporting UI.
+- Backend API: manages tenants, projects, API definitions, test cases and execution requests.
+- Execution workers: run Java/Rest Assured tests outside the web request thread.
+- Database: stores configuration, results, users and audit records.
+- Artifact storage: stores sanitized reports and approved evidence.
+- Scheduler and queue: manages scheduled runs, parallel execution and worker recovery.
+- Monitoring and alerting: tracks product health and customer API health separately.
+
+This structure is easier to build, test and deploy initially. Modules can be split into separate services later when scale or operational requirements justify it.
+
+## 2. Technology stack
+
+| Layer                     | Recommended technology                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Existing execution engine | Java 17 + Rest Assured + Maven                                                                                            |
+| Test framework            | Preserve your current framework; standardize adapters around it                                                           |
+| Backend platform API      | Spring Boot, with a supported version compatible with Java 17                                                             |
+| Frontend                  | Reuse the current console framework; if it is not suitable for long-term product development, evaluate React + TypeScript |
+| Database                  | PostgreSQL for product configuration, execution metadata and results                                                      |
+| Job queue                 | Start with a database-backed queue; introduce RabbitMQ or another broker when needed                                      |
+| Performance testing       | Dedicated performance engine such as k6 or Gatling, selected after a proof of concept                                     |
+| API specification         | OpenAPI/Swagger and Postman collection importers                                                                          |
+| Reporting                 | Existing report capabilities plus downloadable HTML/PDF/CSV reports as required                                           |
+| Deployment                | Docker-based packaging initially; container orchestration when demand requires it                                         |
+| CI/CD                     | Maven, Git and Jenkins initially; provide CI integrations for customer pipelines                                          |
+| Observability             | Structured logs, metrics, health checks and distributed tracing where appropriate                                         |
+
+Important: Rest Assured remains the functional API execution engine. Do not try to turn it into a full load-testing platform. Performance testing needs a separate, purpose-built execution component.
+
+## 3. Core product modules
+
+1\. Tenant, organization and project management
+
+Each customer gets an isolated organization, projects, users, roles, environments and data. Roles should include platform administrator, organization administrator, project owner, tester, developer and read-only reviewer.
+
+2\. API onboarding and configuration
+
+Import Swagger/OpenAPI or Postman collections, or manually create endpoints. Support base URLs, methods, query parameters, headers, authentication, path parameters, request bodies, variables and environment selection.
+
+3\. Test generation and test management
+
+Generate test candidates from schemas and configured constraints. Support manual assertions, reusable test templates, tags, priority, test suites, approval and regression baselines. Generated tests must remain editable and reviewable.
+
+4\. Execution and data chaining
+
+Reuse your Java engine for HTTP execution, response parsing, JSONPath extraction, variable storage, dependent API calls, assertions and reusable utilities. Add queueing, parallel workers, cancellation and controlled retries.
+
+5\. Security testing
+
+Include approved checks for authentication, authorization, input validation, exposed errors, security headers and configured API security rules. Require explicit authorization and scope before intrusive testing; findings need evidence, severity, remediation and retest status.
+
+6\. Performance and monitoring
+
+Provide controlled load profiles, virtual users or arrival-rate settings, duration, ramp-up, throughput, latency percentiles, error rate and threshold evaluation. Scheduled health checks can monitor availability and response times over time.
+
+7\. Reports, history and release readiness
+
+Show execution summaries, pass/fail/blocked counts, failure analysis, trends, security findings, performance results and comparison with previous runs. Reports must preserve run IDs, timestamps, environment and test-definition versions.
+
+## 4. How the automatic test-generation engine should work
+
+This is the main feature that can differentiate your product from a simple API runner.
+
+### Example workflow
+
+\#chatgpt-mermaid-\_r_1vr\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_1vr\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1vr\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1vr\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_1vr\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_1vr\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_1vr\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_1vr\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_1vr\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_1vr\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1vr\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1vr\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_1vr\_ p{margin:0;}#chatgpt-mermaid-\_r_1vr\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_1vr\_ .label text,#chatgpt-mermaid-\_r_1vr\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .node rect,#chatgpt-mermaid-\_r_1vr\_ .node circle,#chatgpt-mermaid-\_r_1vr\_ .node ellipse,#chatgpt-mermaid-\_r_1vr\_ .node polygon,#chatgpt-mermaid-\_r_1vr\_ .node path{fill:rgb(222, 234, 251);stroke:rgb(83, 154, 248);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .rough-node .label text,#chatgpt-mermaid-\_r_1vr\_ .node .label text,#chatgpt-mermaid-\_r_1vr\_ .image-shape .label,#chatgpt-mermaid-\_r_1vr\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_1vr\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .rough-node .label,#chatgpt-mermaid-\_r_1vr\_ .node .label,#chatgpt-mermaid-\_r_1vr\_ .image-shape .label,#chatgpt-mermaid-\_r_1vr\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_1vr\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_1vr\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1vr\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1vr\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_1vr\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1vr\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1vr\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1vr\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_1vr\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_1vr\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1vr\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_1vr\_ .icon-shape,#chatgpt-mermaid-\_r_1vr\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1vr\_ .icon-shape p,#chatgpt-mermaid-\_r_1vr\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_1vr\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_1vr\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1vr\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_1vr\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_1vr\_ .node .neo-node{stroke:rgb(83, 154, 248);}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_1vr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_1vr\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node .neo-line path{stroke:rgb(83, 154, 248);filter:none;}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_1vr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_1vr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1vr\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_1vr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1vr\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_1vr\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_1vr\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_1vr\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_1vr\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .node rect,#chatgpt-mermaid-\_r_1vr\_ .node circle,#chatgpt-mermaid-\_r_1vr\_ .node ellipse,#chatgpt-mermaid-\_r_1vr\_ .node polygon,#chatgpt-mermaid-\_r_1vr\_ .node path{fill:rgb(229, 243, 255);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1vr\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_1vr\_ .node.mermaid-decision .label-container{fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_1vr\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_1vr\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1vr\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Import OpenAPI / Postman orconfigure manuallyNormalize into common APIdefinitionValidate schema andconfigurationGenerate test candidatesPositive testsNegative and boundary testsContract and security checksReview and approve test suiteExecution queueJava / Rest Assured workerPerformance workerSecurity-check workerNormalize resultsDashboard, reports, alerts andhistory
+
+### Test-generation rules
+
+| Test category     | Generation method                                                      | What needs configuration?                                  |
+| ----------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Positive          | Generate valid requests from schema examples and required fields       | Authentication, valid test data, expected business outcome |
+| Missing fields    | Remove required properties one at a time                               | Expected rejection behavior                                |
+| Data types        | Replace strings, numbers, booleans and objects with incompatible types | Contract rules and expected responses                      |
+| Boundaries        | Generate values at, below and above declared limits                    | Minimum, maximum, length and precision                     |
+| Enumerations      | Try valid and invalid enum values                                      | Allowed values and expected behavior                       |
+| Authentication    | Missing, expired or invalid credentials                                | Authentication type and authorized test environment        |
+| Schema validation | Compare responses with defined schemas                                 | Expected response schemas and status codes                 |
+| Business rules    | Execute configured rules and dependent test flows                      | Project-specific business logic                            |
+| Performance       | Run approved load profiles                                             | Thresholds, duration, target capacity and test window      |
+
+The system should assign generated tests a status such as Draft → Reviewed → Approved → Active. This avoids treating every automatically generated variation as a valid test.
+
+### Use adapters rather than project-specific code
+
+Define one internal API model regardless of where the customer imports the API from.
+
+For example, the model should represent:
+
+- HTTP method and URL template
+- Headers, query parameters and path parameters
+- Authentication reference
+- Request body and schema
+- Expected responses and assertions
+- Environment variables
+- Dependencies and extracted values
+- Test tags, risk and execution settings
+
+The OpenAPI importer, Postman importer and manual configuration UI should all produce this same model. Your execution engine then consumes the model without caring how it was created.
+
+## 5. Database and configuration model
+
+Use PostgreSQL for the structured platform data. Keep large response bodies, downloadable reports and evidence in separate artifact storage when appropriate.
+
+### Recommended entities
+
+| Table / entity         | Purpose                               | Key fields                                                                          |
+| ---------------------- | ------------------------------------- | ----------------------------------------------------------------------------------- |
+| `organizations`        | Customer accounts                     | `id`, `name`, `status`, `plan_id`                                                   |
+| `users`                | User accounts                         | `id`, `email`, `status`                                                             |
+| `organization_members` | User membership and role              | `organization_id`, `user_id`, `role`                                                |
+| `projects`             | Independent customer projects         | `id`, `organization_id`, `name`, `settings`                                         |
+| `environments`         | DEV, QA, UAT, staging, production     | `id`, `project_id`, `name`, `base_url`                                              |
+| `api_definitions`      | Imported or manually configured APIs  | `id`, `project_id`, `name`, `version`, `source_type`                                |
+| `endpoints`            | API operations                        | `id`, `api_definition_id`, `method`, `path`, `request_schema`, `response_schema`    |
+| `auth_profiles`        | Authentication configuration          | `id`, `project_id`, `auth_type`, `secret_reference`                                 |
+| `test_suites`          | Logical groups of tests               | `id`, `project_id`, `name`, `tags`                                                  |
+| `test_cases`           | Versioned test definitions            | `id`, `test_suite_id`, `endpoint_id`, `category`, `definition`, `version`, `status` |
+| `test_runs`            | Execution-level metadata              | `id`, `project_id`, `environment_id`, `status`, `started_at`, `ended_at`            |
+| `test_results`         | Individual test outcomes              | `id`, `test_run_id`, `test_case_id`, `outcome`, `duration_ms`, `failure_code`       |
+| `performance_runs`     | Load-test configuration and summaries | `id`, `test_run_id`, `profile`, `latency_percentiles`, `throughput`, `error_rate`   |
+| `security_findings`    | Security issue lifecycle              | `id`, `test_run_id`, `severity`, `status`, `evidence_reference`                     |
+| `schedules`            | Recurring checks                      | `id`, `project_id`, `test_suite_id`, `cron_expression`, `enabled`                   |
+| `audit_events`         | Sensitive platform activity           | `id`, `organization_id`, `actor_id`, `action`, `timestamp`                          |
+
+These are logical entities, not a requirement to create every table on day one. Add them incrementally as features become real.
+
+### Important database design rules
+
+- Every customer-owned entity must be scoped to an organization and, where relevant, a project.
+- Enforce organization isolation in the backend on every request; do not rely on UI filtering.
+- Add database constraints and indexes for tenant, project, run and timestamp queries.
+- Version API definitions and test cases so historical results remain reproducible.
+- Store secret references rather than plaintext credentials in test definitions.
+- Store large request/response bodies separately and redact sensitive fields before retention.
+- Keep execution status distinct from worker or console connectivity status.
+
+### Example endpoint configuration
+
+A simplified logical representation could look like this:
+{
+  "name": "Create Customer",
+  "method": "POST",
+  "path": "/api/v1/customers",
+  "authProfile": "customer-api-auth",
+  "requestBody": {
+    "customerName": "Test Customer",
+    "email": "test@example.com"
+  },
+  "assertions": [
+    {
+      "type": "statusCode",
+      "expected": 201
+    },
+    {
+      "type": "jsonPathExists",
+      "path": "$.customerId"
+    }
+  ],
+  "tags": ["smoke", "customer"]
+}
+This is an illustrative configuration contract, not a claim about the exact schema of your existing engine. The implementation should map the new model to your existing execution classes wherever possible.
+
+## 6. UI screens for the commercial product
+
+Build around the API Automation Console you already have. The UI should be simple enough for a tester to onboard an API without editing Java source code.
+
+[What Goes Into a Software Testing and QA Report](https://images.openai.com/static-rsc-4/dM0HsinBDrMaELBhrvYcBfz2gl9c0GfU59Q6rjFJSjyxOn9rfHHUtZELBkyUHEB0g2je4UggbvKOd1prrqZE_rrkmDZ6dQkBFcgfrDXJB1_1MCraBry7dqWyEA4jZBF4DPbvP6ShLpXdDWf6KzA8cDlsZ7kyIUGlYvdMgY1Rj7g?purpose=inline)
+
+Screen 1 — Organization Dashboard
+
+Projects, latest runs, pass rate, failed and blocked tests, average/P95 latency, security findings, monitoring alerts and recent activity.
+
+Screen 2 — API Onboarding Wizard
+
+Import specification or collection, or add an endpoint manually. Validate the source, preview endpoints, select environments and configure authentication.
+
+[Visual Business Process Designer with advanced features | AppMaster](https://images.openai.com/static-rsc-4/loe8SEmU8bTmeXSvz5IgSTHuBP9KuUn56FUj0gDZwbu73c-yGNfRsNpunyIgWPnwK09cX1Akyw591jdic33OQs9UYhocgPZh2vt5JFBuoUSpmeMbAUrF-7ffOGl_Bx5L1L85GMNQAeUEEhnPvDRcNkcXR370WK0G8IHhj6xspfs?purpose=inline)
+
+Screen 3 — API Explorer
+
+Endpoint list, request builder, headers, parameters, body editor, auth selection, Send/Validate action and response preview.
+
+[如何让 AI 生成测试用例？覆盖正常、异常、边界值等场景](https://images.openai.com/static-rsc-4/lRaZmCgWy0bFEEC-TVwya17fCfwwZFQgWTdWlq6grpxfOwj0MOAHUd8lL_gMxfz8tGkctYcoyADkCHifoPUebmjBRGP5XdhP8xWxTWJcMxm-IIS9VeKEIuVQpSn15_ZRWDzP3QSrOowlB9P8QHVDexWw3YjgUuRbdA_JQrxqVBc?purpose=inline)
+
+Screen 4 — Test Studio
+
+Generate and review test candidates, edit assertions, manage test data, set dependencies, approve tests and select regression suites.
+
+[Assertion management](https://images.openai.com/static-rsc-4/HOILhIAAoiX64xGVl1MlifbsmEXvve_51eDLOa8kQ0VIvcjhkKpMdzMNEirbd5AlRhfqmekVZC4iA_tcitkORu3NeH_3HkcnDjUr0ijpDd0dt9bxFxi9S9YriMNqvNuoxkzyvb3U7wOdHMGwnW4Heg8jnm7jHyvMuqU2u84Jra4?purpose=inline)
+
+Screen 5 — Execution Console
+
+Run progress, searchable test cases, live logs, request/response, assertions, retries, evidence and failure details. Distinguish execution status from live-console connectivity.
+
+[Techmaster Việt Nam - Học là có việc](https://images.openai.com/static-rsc-4/gp1igRIF4tzv-7iXtLGriNBQZ6o_CxJ9UOtu43DvbyV4SGFOGmvj93farxqs5UrHuvFkL9HyrssqWNr8b7i3P_iQuXMCvU8tAnjrzQAgic14xCKrLE91z6M66UGdyNbCWBOsnsUdNe52Xf4ovQ6WB19IMopOmnIljjI0clCKdNI?purpose=inline)
+
+Screen 6 — Performance & Monitoring
+
+Load profiles, latency percentiles, throughput, error rates, scheduled health checks, thresholds and alert history.
+
+[Akto API Security Platform Reviews 2026: Details, Pricing, & Features | G2](https://images.openai.com/static-rsc-4/XzUgvQipHCdl47zKFu9ejvpGsj5sNGPBnv4XS0LpIduaiAYS5NQedD-FLjJtyIKTBhXbCJ45uX2inLOWncym6Z1f7xv-0Qa6ZJnOUJzLNrFEQWQTncIW4CRM-w-vhkRlOqwP46lqA5GsctC6layX1yVvQUHzZwiK5pFtul7hjxQ?purpose=inline)
+
+Screen 7 — Security & Reports
+
+Findings by severity, affected endpoints, evidence, remediation status, retest results, run comparison and exportable reports.
+
+For the first release, these do not need to be seven separate applications. Use a shared navigation layout with separate screens or tabs inside one frontend.
+
+## 7. Phased implementation roadmap
+
+The following is a practical planning estimate for a small, experienced engineering team. Actual duration depends on the quality of your existing code, UI framework, testing requirements and available developers.
+
+## P0
+
+1–2 weeks
+
+Phase 0 — Audit and baseline
+
+- Inspect the current Java/Maven engine and console.
+- Map existing classes, configuration, reports and execution flow.
+- Identify reusable code and gaps.
+- Define the common test model, execution-result contract and acceptance criteria.
+
+Deliverable: architecture document, code reuse map and working baseline.
+
+## P1
+
+3–5 weeks
+
+Phase 1 — Reusable functional core
+
+- Standardize API configuration and assertions.
+- Preserve the existing execution engine.
+- Add manual endpoint configuration.
+- Normalize positive, negative and boundary test execution.
+- Standardize test outcomes, run IDs, logs and reporting.
+
+Deliverable: usable core product for a new project without project-specific Java changes.
+
+## P2
+
+3–5 weeks
+
+Phase 2 — Importers and test studio
+
+- OpenAPI/Swagger importer.
+- Postman collection importer.
+- Schema-based test generation.
+- Test review, editing, approval and versioning.
+- Environment variables and API chaining.
+
+Deliverable: a tester can onboard a documented API and generate a reviewable test suite through the UI.
+
+## P3
+
+3–5 weeks
+
+Phase 3 — Multi-customer product foundation
+
+- Organization/project management.
+- Role-based access control.
+- Tenant isolation and secret management.
+- Execution workers and job queue.
+- Audit trail, run history and downloadable reports.
+
+Deliverable: a deployable multi-customer beta with isolation and access controls tested.
+
+## P4
+
+3–5 weeks
+
+Phase 4 — Security, performance and monitoring
+
+- Authorized security test packs.
+- Dedicated performance engine integration.
+- Scheduled health checks and alerts.
+- Latency percentiles, throughput and threshold reporting.
+- Finding lifecycle and retesting.
+
+Deliverable: broader API quality coverage beyond functional automation.
+
+## P5
+
+3–6 weeks
+
+Phase 5 — Commercial readiness
+
+- Billing/licensing and usage quotas.
+- Tenant onboarding and support tooling.
+- Backup/recovery, retention and deployment options.
+- Load, isolation and security testing.
+- Pilot with selected external customers.
+
+Deliverable: release candidate ready for a controlled commercial pilot.
+
+Indicative total: approximately 16–28 weeks for the full scope with some parallel work. These are planning estimates, not delivery commitments. A narrow MVP can be delivered earlier by deferring advanced security, performance and billing features.
+
+### Acceptance criteria for the first MVP
+
+Do not consider the MVP complete until:
+
+- A user can create a project and configure an API without modifying Java source.
+- An imported API and a manually configured API both execute through the same engine.
+- Positive, negative and boundary tests have configurable expected outcomes.
+- Test data, credentials and environment configuration are kept separate.
+- Request/response assertions, chaining, run history and reports work consistently.
+- The platform can distinguish PASS, FAIL, BLOCKED, SKIPPED and NOT EXECUTED.
+- One tenant cannot access another tenant's configurations, secrets, test data or results.
+- Existing engine regression tests pass after integration.
+- Performance tests have safety limits, and security tests have explicit target authorization and scope.
+
+## 8. Product design decisions to make early
+
+| Decision             | Recommended default                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Multi-tenancy        | Organization-scoped data access enforced by backend and database controls                  |
+| Deployment           | Begin with one controlled deployment; support isolated customer deployments where required |
+| Test generation      | Rules and schemas first; optional AI assistance later                                      |
+| Test execution       | Queue-based isolated workers                                                               |
+| Credentials          | Secret manager or encrypted secret storage; never plain-text secrets in logs               |
+| Performance testing  | Separate engine and separately controlled concurrency limits                               |
+| Security checks      | Authorized scope, safe defaults and auditable execution                                    |
+| Results              | Immutable run history with versioned test definitions                                      |
+| Commercial packaging | Start with plan limits and feature flags; add billing after customer validation            |
+| Domain extensions    | Configurable rule packs and plugins, not hard-coded industry assumptions                   |
+
+Commercial caution: multi-tenancy, data privacy, secure credential handling, customer-controlled deployment requirements and licensing need to be designed into the product early. They are expensive to retrofit after customers are using the platform.
+
+## 9. Copy-paste-ready Claude implementation prompt
+
+Use this in Claude Desktop from the root folder of your existing API Automation project. The prompt instructs Claude to inspect the actual repository before changing anything, reuse your current engine and build in controlled phases rather than generating an entirely new framework.
+
+# Project: Universal API Quality & Automation Platform
+
+## Role
+
+Act as a Senior Software Architect, Java 17 Automation Framework Engineer, API Testing Specialist, SaaS Product Architect, Security Engineer and UI/UX Designer.
+
+I want to transform my existing API Automation Console and Java API execution engine into a reusable, configurable, commercial API automation product that can be used by external customers across multiple industries.
+
+The product must support API onboarding through both:
+OpenAPI/Swagger and Postman collection imports.
+Manual API configuration through the user interface.
+It must eventually support functional, positive, negative, boundary, contract, authorized security, performance and scheduled monitoring tests.
+
+## 1. Mandatory instruction: inspect before coding
+
+Before making any changes:
+Inspect the complete existing project structure.
+Identify the current Java version, Maven configuration, Rest Assured version, test framework, execution engine, configuration files, UI framework, reporting implementation and available tests.
+Trace the existing execution flow from test-data input to API request, response validation, result storage and UI display.
+Identify existing reusable utilities, authentication handlers, data-chaining mechanisms, Excel-driven execution, reporting components and request/response viewers.
+Inspect the current API Automation Console UI and preserve its useful functionality.
+Identify existing defects, duplicated code, architectural risks and missing components.
+Create a file-by-file reuse and gap analysis.
+Produce an implementation plan with dependencies, risks and acceptance criteria.
+Do not assume that a particular frontend framework, database, backend framework or message broker is already present. Verify the repository first.
+
+Do not replace the existing engine merely because a new architecture is proposed. Reuse the working Java 17, Rest Assured and Maven implementation wherever practical.
+
+Do not delete, rename or rewrite working files without explaining the reason and checking for dependencies.
+
+**First deliver the audit and proposed design. Do not immediately rewrite the entire project.**
+
+## 2. Product architecture
+
+Design the product using these logical modules:
+
+- Organization and tenant management.
+- User authentication, roles and permissions.
+- Project and environment management.
+- API onboarding and specification import.
+- Manual API configuration.
+- API definition and schema management.
+- Authentication profiles and secret references.
+- Test generation and test-case management.
+- Reusable Java/Rest Assured execution engine.
+- Execution orchestration and worker management.
+- Functional and contract testing.
+- Negative and boundary testing.
+- Authorized API security testing.
+- Performance testing through a suitable dedicated engine.
+- Scheduled API health monitoring.
+- Execution console and live logs.
+- Test results, reports and historical trends.
+- Security findings and retesting.
+- Audit events and product administration.
+- Future licensing, plan limits and commercial deployment.
+
+Start with a modular architecture. Introduce additional services or infrastructure only when justified by scale, isolation or operational requirements.
+
+## 3. Common API definition model
+
+Create or adapt a versioned, normalized API definition model that can be produced by both importers and manual configuration.
+
+It should support:
+
+- API name and version.
+- HTTP method and path.
+- Base URL and environment selection.
+- Path and query parameters.
+- Headers.
+- Request body and content type.
+- Request and response schemas.
+- Authentication reference.
+- Expected HTTP status.
+- Response-body assertions.
+- JSONPath extraction.
+- Dynamic variables and API chaining.
+- Test tags, priority and risk.
+- Timeouts and retry policy.
+- Test data and data cleanup strategy.
+- Business-rule extensions.
+- Performance and security-test configuration.
+
+The execution engine must consume this common model regardless of whether the API was imported or manually configured.
+
+Keep customer-specific business logic in configurable rules or plugins wherever possible. Avoid hard-coding banking, healthcare, e-commerce or other industry rules into the common engine.
+
+## 4. Test generation
+
+Implement test generation in controlled steps.
+
+First support deterministic generation from API schemas, examples, required fields, data types, enumerations, format constraints and configured business rules.
+
+Generate candidate tests for:
+
+- Valid requests.
+- Missing mandatory fields.
+- Null, empty and malformed values.
+- Invalid data types.
+- Boundary values and length constraints.
+- Invalid enumerations.
+- Invalid path and query parameters.
+- Authentication failures.
+- Response schema validation.
+- Configured business-rule violations.
+
+Generated tests must be editable and reviewable before activation. Use an explicit Draft, Reviewed, Approved and Active lifecycle.
+
+Do not assume every invalid request must return HTTP 400. Expected behavior must be configurable and validated against the API contract and documented business requirements.
+
+Treat schema-based tests and business-rule tests as separate capabilities.
+
+AI-assisted test generation can be considered later, but the core engine must work deterministically without depending on an AI service.
+
+## 5. Execution engine integration
+
+Reuse the existing Java 17, Rest Assured and Maven engine.
+
+Preserve and improve existing capabilities such as:
+
+- GET, POST, PUT, PATCH and DELETE.
+- Request and response logging with redaction.
+- Status-code and response-body assertions.
+- JSONPath extraction.
+- Dynamic variable storage and API chaining.
+- Authentication handling.
+- Excel/JSON test-data support where already implemented.
+- Execution summaries and failure details.
+- Reusable utilities and reporting.
+
+Add a standard result contract with:
+
+- Organization, project and environment IDs.
+- Run ID and test-case version.
+- Start/end timestamps and duration.
+- Outcome and failure classification.
+- Expected and actual results.
+- Sanitized request/response evidence.
+- Retry information.
+- Worker and execution metadata.
+
+Separate test execution status from console or worker connectivity status. Do not display a completed execution as failed just because a live-log connection is disconnected.
+
+Use asynchronous execution for longer test runs. Do not block web requests while an entire suite executes.
+
+Implement controlled concurrency, cancellation, worker recovery and safe retry rules. Do not automatically retry non-idempotent operations unless the test configuration explicitly permits it.
+
+## 6. Performance testing and monitoring
+
+Do not use Rest Assured as the primary load-testing engine.
+
+Evaluate a dedicated engine such as k6 or Gatling and integrate it through a clearly defined adapter.
+
+Support:
+
+- Configurable virtual users or arrival rate.
+- Ramp-up and test duration.
+- Concurrency and request-rate limits.
+- Throughput.
+- Error rate.
+- Median, P90, P95 and P99 latency where supported.
+- Configurable thresholds.
+- Test-window limits and cancellation.
+- Scheduled health checks.
+- Availability and response-time history.
+- Configurable alert rules.
+
+Keep functional tests, load tests and scheduled monitoring runs distinguishable in the database and UI.
+
+Default to conservative limits. Do not run load tests against production without explicit authorization, a defined scope and approved limits.
+
+## 7. Security testing and tenant isolation
+
+Implement safe, authorized API security checks for configured target environments.
+
+Include suitable checks for authentication, authorization, input validation, security headers, exposed errors and configured API security rules.
+
+For each finding, record:
+
+- Finding title and category.
+- Affected endpoint and environment.
+- Severity and rationale.
+- Expected versus observed behavior.
+- Sanitized evidence.
+- Reproduction steps.
+- Recommended remediation.
+- Status: Open, Fixed, Retest Required, Closed or Accepted Risk.
+- Retest history.
+
+Do not label a behavior vulnerable based only on an HTTP status code. Validate the actual security impact.
+
+Security requirements:
+
+- Never store secrets as plaintext in source code or logs.
+- Redact authorization headers, API keys, tokens, OTPs and sensitive personal data.
+- Enforce tenant and project authorization on every backend request.
+- Prevent one customer from reading another customer's tests, results, reports or credentials.
+- Validate uploaded files and imported API specifications.
+- Restrict outbound requests to approved targets to mitigate server-side request forgery.
+- Require explicit scope and authorization for security and performance testing.
+- Add audit logs for sensitive configuration and execution actions.
+
+## 8. Database and configuration
+
+First inspect whether a database already exists.
+
+If there is no suitable database, evaluate PostgreSQL for structured product data and use artifact storage for large reports and evidence.
+
+Propose a normalized schema covering:
+
+- Organizations.
+- Users and organization memberships.
+- Projects.
+- Environments.
+- API definitions.
+- Endpoints.
+- Authentication profiles and secret references.
+- Test suites.
+- Versioned test cases.
+- Test runs.
+- Individual test results.
+- Performance runs.
+- Security findings.
+- Schedules.
+- Audit events.
+
+Every customer-owned record must be scoped to the correct organization and project.
+
+Provide migration scripts, indexes, foreign keys and sensible retention rules where appropriate.
+
+Never put real customer credentials into sample configuration files.
+
+## 9. Required UI screens
+
+Preserve the existing console layout and useful components where practical.
+
+Implement the product navigation incrementally:
+Organization Dashboard.
+Project Management.
+API Onboarding Wizard.
+API Explorer and Manual Configuration.
+Test Studio and Generated Test Review.
+Test Suite Management.
+Execution Console.
+Performance Testing.
+Scheduled Monitoring.
+Security Findings.
+Reports and Run History.
+Environment, Authentication and Secret Configuration.
+User Roles and Audit History.
+The dashboard should display total, passed, failed, blocked, skipped and not-executed counts; pass rate with a clearly defined denominator; duration; response-time metrics; recent runs; module status; failure analysis; and security/performance summaries.
+
+The execution console should provide searchable tests, live progress, request/response details, assertions, logs, failure reasons and sanitized evidence.
+
+Ensure responsive layout, clear error states, loading states, accessible controls and consistent design.
+
+Do not add decorative charts with fabricated data. Use actual persisted execution results.
+
+## 10. Phased implementation
+
+Implement the work in these phases.
+
+### Phase 0: Audit
+
+Deliver:
+
+- Current architecture.
+- Existing project structure.
+- Reusable code inventory.
+- Current execution flow.
+- Technical risks.
+- Missing capabilities.
+- Proposed architecture.
+- File-by-file change plan.
+- Acceptance criteria.
+
+### Phase 1: Reusable functional core
+
+Deliver:
+
+- Common API definition model.
+- Standardized execution result model.
+- Manual endpoint configuration.
+- Positive, negative and boundary test support.
+- Shared assertions and data chaining.
+- Consistent reporting.
+- Regression tests proving existing behavior still works.
+
+### Phase 2: Import and test generation
+
+Deliver:
+
+- OpenAPI/Swagger importer.
+- Postman collection importer.
+- Schema validation.
+- Deterministic candidate-test generation.
+- Test editing, approval and versioning.
+- Environment configuration.
+
+### Phase 3: Commercial platform foundation
+
+Deliver:
+
+- Organizations and projects.
+- Role-based access control.
+- Tenant isolation.
+- Database persistence.
+- Secret references.
+- Execution queues and workers.
+- Audit logs.
+- Run history and downloadable reports.
+
+### Phase 4: Security, performance and monitoring
+
+Deliver:
+
+- Authorized security-test adapters.
+- Dedicated performance engine integration.
+- Scheduled monitoring.
+- Thresholds and alerts.
+- Security findings lifecycle.
+- Performance history and comparisons.
+
+### Phase 5: Commercial readiness
+
+Deliver:
+
+- Plan limits and feature flags.
+- Customer onboarding.
+- Deployment documentation.
+- Backup and recovery procedures.
+- Isolation and load tests.
+- Operational monitoring.
+- Pilot-release checklist.
+
+For every phase, specify the exact files to create or modify, dependencies, implementation steps and acceptance criteria.
+
+## 11. Development rules
+
+- Use Java 17 compatibility unless the repository proves a deliberate supported alternative is necessary.
+- Preserve the current Maven build and existing working functionality.
+- Do not introduce unnecessary dependencies or microservices.
+- Do not rewrite the complete codebase in one step.
+- Follow existing naming conventions and coding style where practical.
+- Keep configuration externalized.
+- Add unit and integration tests for new components.
+- Run the Maven build and relevant regression tests after each logical change.
+- Never claim a build or test passed unless it was actually executed and the result was checked.
+- Do not suppress failing tests just to obtain a green build.
+- Avoid large unrelated refactoring.
+- Use targeted file inspection and concise terminal output.
+- Maintain a short architecture and developer guide.
+- Document all assumptions and unresolved decisions.
+- If the existing code differs from the proposed architecture, explain the difference before changing it.
+
+## 12. Required first response
+
+Before implementing code, provide:
+Executive summary of the current project.
+Current architecture and execution-flow diagram.
+File-by-file reusable-component inventory.
+Proposed target architecture.
+Database and configuration model.
+UI screen and navigation plan.
+Security and tenant-isolation plan.
+Phased roadmap and dependencies.
+Risks, assumptions and unresolved decisions.
+Phase 1 implementation checklist.
+Then wait for approval to begin Phase 1.
+
+The objective is a maintainable, reusable and commercially viable API quality product—not just a demonstration dashboard or a collection of hard-coded test scripts.
+
+## 10. How to start with Claude
+Open your existing API Automation project folder in Claude Desktop or your connected IDE.
+Confirm Claude can read the project files and execute Maven commands in the intended working directory.
+Paste the prompt above and let it inspect the existing project first.
+Review the architecture audit and reuse map before approving implementation.
+Implement Phase 1 in small steps. Run the existing regression tests before proceeding to importers, multi-tenancy or performance integration.
+My strongest recommendation: make the first milestone a working demonstration in which a tester creates a new project, imports or manually configures an API, generates a small test suite and executes it through your existing Java engine — all without modifying Java source code for that new project. Once that works reliably, build the commercial platform around it.

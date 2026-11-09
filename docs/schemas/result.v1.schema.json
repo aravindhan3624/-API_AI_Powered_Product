@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "result.v1",
+  "title": "Execution Result Contract v1.0 (frozen in Phase 0)",
+  "type": "object",
+  "required": ["resultVersion", "runId", "testCaseId", "testCaseVersion", "outcome", "startedAt", "endedAt"],
+  "properties": {
+    "resultVersion": { "const": "1.0" },
+    "orgId": { "type": "string" },
+    "projectId": { "type": "string" },
+    "envId": { "type": "string" },
+    "runId": { "type": "string" },
+    "runType": { "enum": ["functional", "security", "performance", "monitoring"] },
+    "testCaseId": { "type": "string" },
+    "testCaseVersion": { "type": "integer" },
+    "endpointId": { "type": "string" },
+    "outcome": { "enum": ["PASS", "FAIL", "BLOCKED", "SKIPPED", "NOT_EXECUTED"] },
+    "remark": { "type": "string", "description": "Set for pass-with-remark, e.g. wrong-but-rejecting status code" },
+    "failure": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
+        "owner": { "enum": ["api", "data", "environment", "test", "unknown"] },
+        "cwe": { "type": "string" },
+        "owasp": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    },
+    "expected": { "type": "object" },
+    "actual": {
+      "type": "object",
+      "properties": {
+        "httpStatus": { "type": "integer" },
+        "latencyMs": { "type": "integer" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "request": { "type": "string", "description": "Redacted" },
+        "response": { "type": "string", "description": "Redacted" },
+        "artifactRef": { "type": "string" }
+      }
+    },
+    "retries": { "type": "array", "items": { "type": "object" } },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "endedAt": { "type": "string", "format": "date-time" },
+    "durationMs": { "type": "integer" },
+    "worker": {
+      "type": "object",
+      "properties": { "id": { "type": "string" }, "engineVersion": { "type": "string" }, "ruleVersion": { "type": "string" } }
+    },
+    "aiAssist": {
+      "type": "object",
+      "description": "Advisory only; never changes outcome unless explicitly configured",
+      "properties": { "verdict": { "enum": ["PASS", "FAIL", "UNKNOWN"] }, "reason": { "type": "string" }, "model": { "type": "string" } }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!-- Runs every bank one after another; each gets its own report folder and dashboard tab -->
+<suite name="All Projects API Automation">
+
+    <listeners>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+
+    <test name="RNSB API Tests">
+        <classes><class name="com.api.automation.runners.RNSB_Runner"/></classes>
+    </test>
+
+    <test name="SPCBL API Tests">
+        <classes><class name="com.api.automation.runners.SPCBL_Runner"/></classes>
+    </test>
+
+</suite>

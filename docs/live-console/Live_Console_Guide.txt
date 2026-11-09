@@ -1,0 +1,213 @@
+API AUTOMATION - LIVE CONSOLE GUIDE
+What every number and button on http://localhost:8095 means
+Prepared by Aravindhan D
+==============================================================================
+
+
+[TOP BAR]
+------------------------------------------------------------------------------
+* LIVE / PAUSED / COMPLETED / OFFLINE pill
+    What : State of the run.
+    How  : LIVE = tests running · PAUSED = Pause pressed · COMPLETED = run finished · OFFLINE = the run ended and the live server closed (page shows the final state) · SAVED REPORT = the HTML copy saved after the run.
+    e.g. : LIVE
+* Pause / Resume button
+    What : Stops the run between two APIs and continues it later.
+    How  : The API that is running finishes; the next one waits until Resume. Paused time is NOT counted in Speed / Time left. Works only on the test machine. Shortcut P.
+    e.g. : ⏸ Pause → ▶ Resume
+* TV button
+    What : Full-screen view for a meeting-room monitor.
+    How  : Browser full screen. Shortcut F; Esc leaves.
+    e.g. : ⛶ TV
+* ◐ Theme button
+    What : Light / dark theme.
+    How  : Remembered in this browser. Shortcut T.
+    e.g. : dark
+
+[HEADER]
+------------------------------------------------------------------------------
+* Tested by
+    What : Who ran the tests.
+    How  : tester.name in config.properties.
+    e.g. : Aravindhan D
+* Base URL · Started · Finished
+    What : Server under test and run times.
+    How  : Base URL from config (<PROJECT>.base.url). Times are this PC's clock.
+    e.g. : https://iflowckyc.isolveapps.in · 05:42:27 PM
+
+[KPI TILES]
+------------------------------------------------------------------------------
+* Total
+    What : Number of test cases in this run (positive + negative). Never changes during the run.
+    How  : All planned tests. A negative check that cannot run (endpoint not usable) stays in the total as 'Not executable'. Sub-line: N remaining = Total - finished.
+    e.g. : 1512 · 310 remaining
+* Passed
+    What : Tests whose result matched the expected result.
+    How  : Count of PASS. Sub-line: % of executed = Passed ÷ (Passed + Failed).
+    e.g. : 993 · 85% of executed
+* Failed
+    What : Tests whose result did NOT match - a bug, an environment problem or a test-data problem.
+    How  : Count of FAIL. Sub-line: % of executed = Failed ÷ (Passed + Failed).
+    e.g. : 178 · 15% of executed
+* Skipped
+    What : Tests that could not be sent (no data / OTP not entered / an earlier step failed).
+    How  : Count of SKIP. Each has its reason in Remarks.
+    e.g. : 4
+* Not executable
+    What : Negative checks cancelled because the API's positive test showed the endpoint is not usable (404 not deployed, 403 no permission, 401, 405, 50x).
+    How  : Count of NA. They are not run: a rejection from a broken endpoint proves nothing. They run automatically once the endpoint works.
+    e.g. : 337
+* Pass rate
+    What : Quality of the APIs that were really tested.
+    How  : Passed ÷ (Passed + Failed) × 100. Skipped and Not executable are NOT in the formula.
+    e.g. : 84.8%
+* Avg response
+    What : Average server response time of one API call.
+    How  : Mean of the response time (request sent → full response received) of all PASS + FAIL tests. Sub-line: total API time (sum of all response times), or 'N slower than SLA' when calls exceed sla.ms (5000 ms).
+    e.g. : 329 ms · API time 25.6 s
+* Overall time
+    What : Wall-clock duration of the whole run (includes login, discovery, pauses, OTP waiting).
+    How  : Now (or Finished) - Started. Sub-line: running… / paused / completed.
+    e.g. : 7m 55s
+
+[PROGRESS CARD]
+------------------------------------------------------------------------------
+* x of y test cases done + bar
+    What : How far the run is.
+    How  : Done = Passed + Failed + Skipped + Not executable. Bar colours: green pass, red fail, amber skip, grey not executable, striped blue = running.
+    e.g. : 917 of 1512 · 61%
+* Time left (est.)
+    What : Estimated time until the run finishes.
+    How  : Average time per executed test × tests still to do. Executed time = elapsed time - paused time. Gets more accurate as the run goes on.
+    e.g. : 2m 12s
+* Speed
+    What : How many tests are executed per minute.
+    How  : (Passed + Failed + Skipped) ÷ executed minutes (paused time excluded). Not-executable checks are not counted (they take no time).
+    e.g. : 123 tests/min
+* Slowest API
+    What : The single slowest call so far.
+    How  : Highest response time among PASS + FAIL tests, with its TC ID.
+    e.g. : 1.75 s TC001
+
+[RESULTS CARD]
+------------------------------------------------------------------------------
+* Donut + pass rate
+    What : Share of each result.
+    How  : Passed / Failed / Skipped / Not executable / Pending as parts of Total; the centre shows the pass rate.
+    e.g. : 88%
+* Positive / Negative
+    What : Results split by test type.
+    How  : Positive = valid requests (TCxxx). Negative = generated invalid / security requests (TCxxx_nn).
+    e.g. : Positive 81 pass · 29 fail
+
+[MODULES CARD]
+------------------------------------------------------------------------------
+* Module bars
+    What : Progress and result per module (00 Auth, 02 DVS ...).
+    How  : done/total · pass/fail per module. Click a module to filter the table and the map.
+    e.g. : 02 DVS  75/168 · 65/10
+
+[EXECUTION MAP]
+------------------------------------------------------------------------------
+* Tiles
+    What : Every test case as one tile, grouped by module.
+    How  : Colour = status (green pass, red fail, amber skip, grey not executable, blinking blue running). Square = positive, circle = negative. Hover = TC, API, HTTP, category. Click = details.
+    e.g. : ■ ● ●
+
+[TOP FAILURE REASONS]
+------------------------------------------------------------------------------
+* Bars
+    What : Why tests fail, most frequent first.
+    How  : FAIL tests grouped by failure category (ENDPOINT NOT DEPLOYED, NEGATIVE CASE ACCEPTED, SERVER ERROR ...). Click to list those failures.
+    e.g. : NEGATIVE CASE ACCEPTED 6
+
+[RESPONSE TIME CHART]
+------------------------------------------------------------------------------
+* Bars
+    What : Response time of the last 150 calls, oldest left.
+    How  : Bar height = response time. Green = pass, amber = slower than SLA (sla.ms), red = fail. Click a bar = details.
+* avg / p95 / max
+    What : Speed statistics of those calls.
+    How  : avg = mean; p95 = 95 % of calls were faster than this (ignores rare spikes); max = slowest call.
+    e.g. : avg 329 ms · p95 985 ms · max 1.75 s
+
+[NOW EXECUTING]
+------------------------------------------------------------------------------
+* Card
+    What : The API being called right now.
+    How  : TC ID, API name, method, URL, current step (sending / validating / AI verifying) and for how long. Amber = waiting for OTP. Shows 'Paused by tester' when paused.
+    e.g. : TC047_12 · Very large payload
+
+[TEST CASES TABLE]
+------------------------------------------------------------------------------
+* Status
+    What : Result of the test case.
+    How  : QUEUED, RUNNING, WAITING OTP, PASS, FAIL, SKIP, NOT EXEC.
+    e.g. : PASS
+* TC ID + POS / NEG
+    What : Test case number and type.
+    How  : TC047 = positive; TC047_05 = 5th negative check of TC047; TC047_NA = not-executable group.
+    e.g. : TC047_05 NEG
+* API / full URL
+    What : API name and the real URL called.
+    How  : Variables like ${api_base_url} are resolved. Click the row to see Base URL / API path / Full URL separately with Copy buttons.
+    e.g. : https://…/dvs/getCustomerDetails
+* HTTP (actual · expected)
+    What : HTTP code received and the code the rulebook expects.
+    How  : ✓ green = standard code. ⚠ amber = rejected but with a non-standard code (e.g. 422 instead of 401). Rules: docs/API_Test_Rulebook.md.
+    e.g. : 422 ⚠ · exp 401 Unauthorized
+* Time
+    What : Response time of this call.
+    How  : Request sent → response received.
+    e.g. : 307 ms
+* Remarks
+    What : Why it failed / was skipped / was not executable.
+    How  : Category + plain-English reason (same text as the Excel 'Why it failed' column).
+    e.g. : NEGATIVE CASE ACCEPTED · invalid input was accepted
+* AI
+    What : Optional AI check of expected vs actual.
+    How  : PASS / FAIL / N/A from local Ollama (advisory only).
+    e.g. : –
+* Filters
+    What : Narrow the list.
+    How  : Chips (All / Passed / Failed / Skipped / Not exec / Pending), Pos + Neg / Positive / Negative, search box (TC, API, URL, reason), module click, KPI tile click. Shortcut / = search.
+
+[LIVE CONSOLE]
+------------------------------------------------------------------------------
+* Log lines
+    What : Everything the run does, live.
+    How  : INFO = run events · STEP = sending / validating · PASS · FAIL · WARN (skip, not executable, pause, OTP). Click a TC ID to open it.
+    e.g. : PASS  TC046_19  Wrong HTTP method · HTTP 405
+* Level chips / filter / follow
+    What : Find lines quickly.
+    How  : Chips filter by level, the box filters by text, 'follow' keeps the newest line in view.
+
+[DETAILS PANEL]
+------------------------------------------------------------------------------
+* Click any test
+    What : Everything about one test.
+    How  : Status · Request URL (Base URL, API path, Full URL, expected vs actual HTTP, VAPT reference) · bug description for failures (steps, expected, actual, fix) · validation checks · test data · request · response · full response viewer (saved report).
+
+[POP-UPS]
+------------------------------------------------------------------------------
+* New failure toast
+    What : Alert when a new failure arrives.
+    How  : Shows the count and the latest TC + category.
+    e.g. : ✖ 1 new failure · TC049_09
+* OTP popup
+    What : Asks the tester for an OTP.
+    How  : Shows OVD number, where the OTP was sent, API. 90 s countdown; then default 000000 is used. Wrong OTP → asked once more. Asked only for valid data.
+    e.g. : Aadhaar XXXX XXXX 8005 · 9677755667
+
+[GENERAL]
+------------------------------------------------------------------------------
+* Auto refresh
+    What : The page updates itself.
+    How  : Polls the run every second. If the console page itself is updated, an open tab reloads automatically.
+* Saved HTML report
+    What : The same page after the run.
+    How  : reports/<PROJECT>/Reports_<PROJECT>_<date>_<time>.html - opens without the live server.
+
+==============================================================================
+Same numbers everywhere: Total = Passed + Failed + Skipped + Not executable
+(live console, Excel 'Summary' sheet and the IntelliJ / Maven summary line).
+Pass rate = Passed / (Passed + Failed). Speed and Time left ignore paused time.

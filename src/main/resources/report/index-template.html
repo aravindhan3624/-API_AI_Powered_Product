@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report history</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1b2438;--mute:#667089;--line:#e3e7f1;--head:#14284b;--accent:#2f5bd8}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1524;--card:#18203a;--ink:#e8ecf6;--mute:#9aa6c4;--line:#2a3558;--head:#0a1226;--accent:#7aa2ff}}
+body{margin:0;font:14px/1.45 Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--head);color:#fff;padding:16px 28px}header h1{margin:0;font-size:20px}
+main{padding:20px 28px;max-width:1200px;margin:auto}
+input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin-bottom:14px;font-size:14px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px}
+th,td{padding:9px 12px;border-top:1px solid var(--line);text-align:left}th{font-size:11px;text-transform:uppercase;color:var(--mute)}
+a.b{background:var(--accent);color:#fff;padding:5px 12px;border-radius:7px;text-decoration:none;font-size:13px;margin-right:6px}
+a.b.o{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.f{color:#d3322c;font-weight:700}.p{color:#0e8a4a;font-weight:700}
+</style>
+</head>
+<body>
+<header><h1 id="t"></h1></header>
+<main>
+<input id="q" type="search" placeholder="Search by date, run id, environment, file name...">
+<table><thead><tr><th>When</th><th>Run</th><th>Env</th><th>Total</th><th>Passed</th><th>Failed</th><th>Blocked</th><th>Pass rate</th><th>Open</th></tr></thead><tbody id="rows"></tbody></table>
+</main>
+<script id="data" type="application/json">/*__DATA__*/null</script>
+<script>
+const D=JSON.parse(document.getElementById('data').textContent),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('t').textContent=D.project+' - report history ('+D.runs.length+')';
+function draw(){const q=document.getElementById('q').value.toLowerCase();
+document.getElementById('rows').innerHTML=D.runs.filter(r=>JSON.stringify(r).toLowerCase().includes(q)).map(r=>'<tr><td>'+esc(r.when)+'</td><td>'+esc(r.runId||'(legacy console)')+'</td><td>'+esc(r.environment||'')+'</td><td>'+esc(r.total==null?'-':r.total)+'</td><td class="p">'+esc(r.passed==null?'-':r.passed)+'</td><td class="f">'+esc(r.failed==null?'-':r.failed)+'</td><td>'+esc(r.blocked==null?'-':r.blocked)+'</td><td>'+esc(r.passRate||'-')+'</td><td><a class="b" href="'+encodeURI(r.file)+'">View report</a>'+(r.excel?'<a class="b o" href="'+encodeURI(r.excel)+'">Excel</a>':'')+(r.pdf?'<a class="b o" href="'+encodeURI(r.pdf)+'">PDF</a>':'')+(r.vaptHtml?'<a class="b o" href="'+encodeURI(r.vaptHtml)+'">VAPT</a><a class="b o" href="'+encodeURI(r.vaptPdf)+'">VAPT PDF</a>':'')+'</td></tr>').join('')||'<tr><td colspan="9">No reports</td></tr>'}
+document.getElementById('q').oninput=draw;draw();
+</script>
+</body>
+</html>

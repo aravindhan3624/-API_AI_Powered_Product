@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="CKYC API Automation - Negative tests">
+
+    <listeners>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+
+    <test name="CKYC Negative Tests">
+        <classes>
+            <class name="com.api.automation.runners.CKYC_Negative_Runner"/>
+        </classes>
+    </test>
+
+</suite>

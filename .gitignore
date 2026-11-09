@@ -1,0 +1,47 @@
+# --- secrets, licence keys, saved project models (clear-text credentials) ---
+projects/
+vendor/
+**/config.properties
+*.pem
+*.key
+*.jks
+*.p12
+*.pfx
+.env
+.env.*
+!src/main/resources/license/public.key
+
+# --- customer / bank test data, captures, reports ---
+reports/
+src/test/resources/API_TestData/
+src/test/resources/payloads/
+postman/
+docs/sample_postman/
+docs/SAMPLE_Postman_Handover.zip
+*.har
+*.xlsx
+!src/main/resources/templates/**
+
+# --- backups, snapshots, chat exports, old copies ---
+Today_Backup_*/
+backup/
+
+# --- build output, packages, binaries ---
+target/
+dist/
+*.jar
+*.exe
+*.zip
+*.class
+
+# --- IDE / tool / browser profile / logs ---
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+.claude/
+copilot-profile/
+*.log
+*.dumpstream

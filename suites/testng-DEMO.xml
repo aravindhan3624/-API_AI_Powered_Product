@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="DEMO API Automation">
+
+    <listeners>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+
+    <test name="DEMO API Tests">
+        <classes>
+            <class name="com.api.automation.runners.DEMO_Runner"/>
+        </classes>
+    </test>
+
+</suite>

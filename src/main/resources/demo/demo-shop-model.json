@@ -1,0 +1,50 @@
+{
+  "modelVersion": "1.0",
+  "api": {
+    "name": "Demo_Shop",
+    "version": "1",
+    "source": { "type": "demo", "ref": "dummyjson.com public sandbox (safe to test; nothing real is touched)" }
+  },
+  "environments": [
+    {
+      "name": "DEMO",
+      "baseUrl": "https://dummyjson.com",
+      "scopeAllowlist": ["dummyjson.com"],
+      "variables": { "demoUser": "emilys", "demoPass": "emilyspass" }
+    }
+  ],
+  "authProfiles": [
+    { "id": "demoLogin", "type": "login", "loginEndpointId": "login", "tokenVar": "token", "headerName": "Authorization", "headerTemplate": "Bearer ${token}" }
+  ],
+  "endpoints": [
+    { "id": "login", "name": "Login", "module": "Auth", "method": "POST", "path": "/auth/login", "contentType": "application/json",
+      "requestBody": { "username": "${demoUser}", "password": "${demoPass}", "expiresInMins": 30 },
+      "extract": [ { "var": "token", "jsonPath": "$.accessToken" } ] },
+    { "id": "me", "name": "Current user", "module": "Auth", "method": "GET", "path": "/auth/me", "authProfileRef": "demoLogin" },
+    { "id": "products", "name": "List products", "module": "Products", "method": "GET", "path": "/products", "query": { "limit": "3" } },
+    { "id": "product", "name": "Product detail", "module": "Products", "method": "GET", "path": "/products/1" },
+    { "id": "search", "name": "Search products", "module": "Products", "method": "GET", "path": "/products/search", "query": { "q": "phone" } },
+    { "id": "addProduct", "name": "Add product", "module": "Products", "method": "POST", "path": "/products/add", "contentType": "application/json", "idempotent": false,
+      "requestBody": { "title": "Demo Phone", "price": 499, "category": "smartphones" } },
+    { "id": "cart", "name": "Cart detail", "module": "Carts", "method": "GET", "path": "/carts/1" },
+    { "id": "user", "name": "User detail", "module": "Users", "method": "GET", "path": "/users/1" }
+  ],
+  "testCases": [
+    { "id": "D01_login", "endpointId": "login", "category": "POSITIVE", "title": "Login with valid credentials", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.accessToken" } ] } },
+    { "id": "D02_me", "endpointId": "me", "category": "POSITIVE", "title": "Read the logged-in user", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathEquals", "path": "$.username", "expected": "emilys" } ] } },
+    { "id": "D03_products", "endpointId": "products", "category": "POSITIVE", "title": "List products", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.products" } ] } },
+    { "id": "D04_product", "endpointId": "product", "category": "POSITIVE", "title": "Product detail", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.title" }, { "type": "maxLatencyMs", "expected": 5000 } ] } },
+    { "id": "D05_search", "endpointId": "search", "category": "POSITIVE", "title": "Search products", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.total" } ] } },
+    { "id": "D06_add", "endpointId": "addProduct", "category": "POSITIVE", "title": "Add a product", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200, 201], "assertions": [ { "type": "jsonPathExists", "path": "$.id" } ] } },
+    { "id": "D07_cart", "endpointId": "cart", "category": "POSITIVE", "title": "Cart detail", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.products" } ] } },
+    { "id": "D08_user", "endpointId": "user", "category": "POSITIVE", "title": "User detail", "lifecycle": "ACTIVE", "origin": "demo",
+      "expected": { "status": [200], "assertions": [ { "type": "jsonPathExists", "path": "$.firstName" } ] } }
+  ]
+}

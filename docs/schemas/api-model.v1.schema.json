@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "api-model.v1",
+  "title": "Normalized API Model v1.0 (frozen in Phase 0)",
+  "type": "object",
+  "required": ["modelVersion", "api", "endpoints"],
+  "properties": {
+    "modelVersion": { "const": "1.0" },
+    "api": {
+      "type": "object",
+      "required": ["name", "source"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "source": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["manual", "postman", "openapi", "curl", "har", "excel", "browser-capture"] },
+            "ref": { "type": "string" },
+            "hash": { "type": "string" },
+            "warnings": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "baseUrl"],
+        "properties": {
+          "name": { "type": "string" },
+          "baseUrl": { "type": "string" },
+          "scopeAllowlist": { "type": "array", "items": { "type": "string" } },
+          "variables": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      }
+    },
+    "authProfiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["none", "basic", "bearer", "apikey", "oauth2", "session", "custom"] },
+          "secretRef": { "type": "string", "description": "Reference such as ${ENV:NAME}; never a literal secret" },
+          "steps": { "type": "array", "items": { "type": "string" } },
+          "humanGate": { "enum": ["none", "otp"] }
+        }
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "method", "path"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] },
+          "path": { "type": "string" },
+          "authProfileRef": { "type": "string" },
+          "contentType": { "type": "string" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+          "query": { "type": "object" },
+          "pathParams": { "type": "object" },
+          "requestBody": {},
+          "requestSchema": { "type": "object" },
+          "responseSchemas": { "type": "object" },
+          "envelope": {
+            "type": "object",
+            "properties": {
+              "type": { "enum": ["none", "aes-gcm", "custom"] },
+              "pluginRef": { "type": "string" }
+            }
+          },
+          "extract": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["var", "jsonPath"],
+              "properties": { "var": { "type": "string" }, "jsonPath": { "type": "string" } }
+            }
+          },
+          "dependsOn": { "type": "array", "items": { "type": "string" } },
+          "idempotent": { "type": "boolean" },
+          "risk": { "enum": ["low", "medium", "high"] },
+          "timeoutMs": { "type": "integer" },
+          "retry": {
+            "type": "object",
+            "properties": { "max": { "type": "integer" }, "onlyIfIdempotent": { "type": "boolean" } }
+          },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "testCases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "endpointId", "category", "lifecycle", "version"],
+        "properties": {
+          "id": { "type": "string" },
+          "endpointId": { "type": "string" },
+          "category": {
+            "enum": ["POSITIVE", "NO_SESSION", "WRONG_PASSWORD", "TAMPERED_TOKEN", "TAMPERED_CSRF", "OTHER_USER",
+                     "TAMPERED_ENCRYPTION", "WRONG_METHOD", "LARGE_PAYLOAD", "NOT_EXISTING",
+                     "MISSING_FIELD", "INVALID_TYPE", "BOUNDARY", "ENUM", "NULL_EMPTY", "MALFORMED",
+                     "BUSINESS_RULE", "CONTRACT"],
+            "description": "Names align with api-test-rules.properties keys so the rule pack decides expected codes"
+          },
+          "mutation": { "type": "object" },
+          "expected": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "array", "items": { "type": "integer" }, "description": "Overrides rule-pack default when set" },
+              "assertions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["type"],
+                  "properties": {
+                    "type": { "enum": ["statusCode", "jsonPathExists", "jsonPathEquals", "jsonPathMatches", "schema", "headerEquals", "maxLatencyMs", "bodyNotContains"] },
+                    "path": { "type": "string" },
+                    "expected": {}
+                  }
+                }
+              }
+            }
+          },
+          "lifecycle": { "enum": ["DRAFT", "REVIEWED", "APPROVED", "ACTIVE"] },
+          "origin": { "enum": ["manual", "generated", "ai", "imported"] },
+          "version": { "type": "integer", "minimum": 1 },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

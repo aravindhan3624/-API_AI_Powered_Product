@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Importer">
+    <test name="Postman import">
+        <classes>
+            <class name="com.api.product.ImportPostmanTest"/>
+        </classes>
+    </test>
+</suite>

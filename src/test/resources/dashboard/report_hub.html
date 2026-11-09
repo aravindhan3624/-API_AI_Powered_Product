@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Automation Reports</title>
+<style>
+:root{
+  --bg:#eef2f7; --card:#ffffff; --ink:#15212e; --muted:#667385; --line:#e2e8f0; --soft:#f6f8fb;
+  --navy:#0b2341; --navy2:#173e6b; --blue:#1565c0; --blue-lt:#e6f0fc;
+  --green:#1e8449; --green-lt:#e1f4e8; --red:#c0392b; --red-lt:#fbe3df; --amber:#c27c0e; --amber-lt:#fdefd9;
+  --grey:#7f8c8d; --grey-lt:#eceff2; --violet:#6c3fc9; --violet-lt:#f1e9ff;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.07);
+}
+:root[data-theme="dark"]{
+  --bg:#0c1522; --card:#132033; --ink:#e3ecf7; --muted:#8fa1b8; --line:#22344d; --soft:#17263b;
+  --blue-lt:#16314f; --green-lt:#123526; --red-lt:#3a1b1b; --amber-lt:#3a2c12; --grey-lt:#1e2b3c; --violet-lt:#2a1f47;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+.top{background:linear-gradient(100deg,var(--navy),var(--navy2) 60%,#1d4f86);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#36a3ff,#1565c0);display:grid;place-items:center;font-weight:800;font-size:13px}
+.top h1{margin:0;font-size:18px;letter-spacing:.2px}
+.top small{display:block;font-weight:400;font-size:12px;opacity:.75}
+.sp{flex:1}
+.btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.2)}
+main{max-width:1500px;margin:0 auto;padding:22px 28px 60px}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+:root[data-theme="dark"] .chip.on{background:#2e6fbf;border-color:#2e6fbf}
+.search{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;width:260px;margin-left:auto}
+.stat{color:var(--muted);font-size:13px}
+.proj{margin:26px 0 12px;display:flex;align-items:baseline;gap:12px}
+.proj h2{margin:0;font-size:20px}
+.proj span{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px}
+.card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px;border-top:5px solid var(--c,var(--blue));display:flex;flex-direction:column;gap:12px;position:relative}
+.card.good{--c:var(--green)} .card.mid{--c:var(--amber)} .card.bad{--c:var(--red)} .card.none{--c:var(--grey)}
+.row1{display:flex;align-items:flex-start;gap:10px}
+.when{font-size:17px;font-weight:700}
+.when small{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:1px}
+.rate{margin-left:auto;text-align:right}
+.rate b{font-size:30px;line-height:1;font-weight:800;color:var(--c)}
+.rate small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;letter-spacing:.3px}
+.tag.mode{background:var(--blue-lt);color:var(--blue)}
+.tag.neg{background:var(--violet-lt);color:var(--violet)}
+.tag.pos{background:var(--green-lt);color:var(--green)}
+.tag.latest{background:var(--amber-lt);color:var(--amber)}
+.bar{height:10px;border-radius:999px;background:var(--grey-lt);overflow:hidden;display:flex}
+.bar span{display:block;height:100%}
+.nums{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.n{background:var(--soft);border-radius:10px;padding:7px 9px}
+.n i{display:block;font-style:normal;font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.n b{font-size:16px;font-variant-numeric:tabular-nums}
+.n.p b{color:var(--green)} .n.f b{color:var(--red)} .n.s b{color:var(--amber)} .n.x b{color:var(--grey)}
+.meta{color:var(--muted);font-size:12.5px;display:flex;gap:6px 16px;flex-wrap:wrap}
+.meta b{color:var(--ink);font-weight:600}
+.acts{display:flex;gap:10px;margin-top:2px}
+.go{flex:1;text-align:center;font-weight:700;border-radius:11px;padding:10px 14px;background:var(--blue);color:#fff;transition:filter .15s}
+.go:hover{filter:brightness(1.12)}
+.go.ghost{flex:none;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.go.ghost:hover{background:var(--blue-lt)}
+.shot{position:relative;flex:none;width:92px;border-radius:9px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow);background:#000;align-self:stretch}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot span{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;padding:2px 6px}
+.nosum{color:var(--muted);font-size:12.5px;font-style:italic;padding:6px 0}
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+footer{color:var(--muted);font-size:12px;text-align:center;margin-top:34px}
+@media (max-width:560px){main{padding:16px}.grid{grid-template-columns:1fr}.nums{grid-template-columns:repeat(3,1fr)}.search{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">API</div>
+  <div><h1>API Automation Reports<small id="sub">Every run, project-wise · newest first</small></h1></div>
+  <div class="sp"></div>
+  <button class="btn" id="theme">◐ Dark</button>
+</header>
+<main>
+  <div class="tools"><span id="chips"></span><span class="stat" id="count"></span><input class="search" id="q" placeholder="Search project, date, tester…"></div>
+  <div id="list"></div>
+  <footer id="foot"></footer>
+</main>
+<script>
+const DATA = /*DATA*/null;
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let proj = 'ALL', q = '';
+
+function setTheme(t){ document.documentElement.setAttribute('data-theme', t); try{ localStorage.setItem('apiConsoleTheme', t); }catch(e){} $('theme').textContent = t==='dark' ? '☀ Light' : '◐ Dark'; }
+try{ setTheme(localStorage.getItem('apiConsoleTheme') || 'light'); }catch(e){ setTheme('light'); }
+$('theme').onclick = () => setTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+
+function dur(ms){ if(ms==null) return '–'; const s=Math.round(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  return h ? h+'h '+String(m).padStart(2,'0')+'m' : m ? m+'m '+String(x).padStart(2,'0')+'s' : x+'s'; }
+function fmtDate(t){ const d = new Date(t); return d.toLocaleDateString([], {day:'2-digit',month:'short',year:'numeric'}); }
+function fmtTime(t){ return new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+const MODES = {ALL:'Positive + Negative', POSITIVE:'Positive only', NEGATIVE:'Negative only'};
+
+function card(r, latest){
+  const has = r.total != null;
+  const exec = has ? (r.passed||0) + (r.failed||0) : 0;
+  const rate = has && exec ? (r.passed*100/exec) : null;
+  const cls = !has ? 'none' : rate==null ? 'none' : rate>=90 ? 'good' : rate>=70 ? 'mid' : 'bad';
+  const w = n => has && r.total ? (n*100/r.total)+'%' : '0';
+  return `<article class="card ${cls}">
+    <div class="row1">
+      <div class="when">${esc(fmtDate(r.when))}<small>${esc(fmtTime(r.when))}${r.durationMs!=null ? ' · took '+esc(dur(r.durationMs)) : ''}</small></div>
+      <div class="rate">${rate==null ? '<b>–</b>' : '<b>'+rate.toFixed(1)+'%</b>'}<small>pass rate</small></div>
+    </div>
+    <div class="tags"><span class="tag mode">${esc(MODES[r.mode]||r.mode)}</span>${latest?'<span class="tag latest">LATEST</span>':''}${r.env?'<span class="tag pos">'+esc(r.env)+'</span>':''}</div>
+    ${has ? `<div class="bar"><span style="width:${w(r.passed)};background:var(--green)"></span><span style="width:${w(r.failed)};background:var(--red)"></span><span style="width:${w(r.skipped)};background:var(--amber)"></span><span style="width:${w(r.notExecutable)};background:var(--grey)"></span></div>
+    <div class="nums">
+      <div class="n"><i>Total</i><b>${r.total}</b></div><div class="n p"><i>Passed</i><b>${r.passed}</b></div><div class="n f"><i>Failed</i><b>${r.failed}</b></div>
+      <div class="n s"><i>Skipped</i><b>${r.skipped}</b></div><div class="n x"><i>Not exec</i><b>${r.notExecutable}</b></div><div class="n"><i>Positive</i><b>${r.positive!=null?r.positive:'–'}</b></div>
+    </div>` : '<div class="nosum">Summary numbers are not available for this older report - open it to see the results.</div>'}
+    <div class="meta">${r.testedBy?'<span>Tested by <b>'+esc(r.testedBy)+'</b></span>':''}${r.runner?'<span>'+esc(r.runner)+'</span>':''}${r.baseUrl?'<span>'+esc(r.baseUrl)+'</span>':''}</div>
+    <div class="acts">
+      <a class="go" href="${esc(r.html)}" target="_blank" rel="noopener">📄 View report</a>
+      ${r.excel ? `<a class="go ghost" href="${esc(r.excel)}" title="Download the Excel report">📊 Excel</a>` : ''}
+      ${r.vaptReport ? `<a class="go ghost" href="${esc(r.vaptReport)}" target="_blank" rel="noopener" title="VAPT report">🔒 VAPT</a>` : ''}
+      ${r.failureReport ? `<a class="go ghost" href="${esc(r.failureReport)}" target="_blank" rel="noopener" title="Failure report with steps to reproduce">🐞 Failures</a>` : ''}
+      ${r.recording ? `<a class="go ghost" href="${esc(r.recording)}" target="_blank" rel="noopener" title="Screen recording of this run">🎥 Video</a>` : ''}
+      ${r.screenshot ? `<a class="shot" href="${esc(r.screenshot)}" target="_blank" rel="noopener" title="Final screen after completion - click to enlarge"><img src="${esc(r.screenshot)}" alt="Final screenshot" loading="lazy"><span>📸</span></a>` : ''}
+    </div>
+  </article>`;
+}
+
+function render(){
+  const all = (DATA && DATA.runs) || [];
+  const projects = [...new Set(all.map(r=>r.project))];
+  $('chips').innerHTML = ['ALL'].concat(projects).map(p => `<button class="chip ${proj===p?'on':''}" data-p="${esc(p)}">${p==='ALL'?'All projects':esc(p)}</button>`).join(' ');
+  const term = q.toLowerCase();
+  const list = all.filter(r => (proj==='ALL' || r.project===proj) && (!term || (r.project+' '+r.name+' '+fmtDate(r.when)+' '+(r.testedBy||'')+' '+(r.mode||'')).toLowerCase().includes(term)));
+  $('count').textContent = list.length + ' report' + (list.length===1?'':'s');
+  if(!list.length){ $('list').innerHTML = '<div class="empty">No reports yet. Run a test runner - its report appears here automatically.</div>'; }
+  else {
+    const by = {};
+    list.forEach(r => (by[r.project] = by[r.project] || []).push(r));
+    $('list').innerHTML = Object.keys(by).map(p => `<div class="proj"><h2>${esc(p)}</h2><span>${by[p].length} report${by[p].length===1?'':'s'} · reports/${esc(p)}/</span></div>
+      <div class="grid">${by[p].map((r,i) => card(r, i===0)).join('')}</div>`).join('');
+  }
+  $('foot').textContent = 'Generated ' + (DATA ? new Date(DATA.generatedAt).toLocaleString() : '') + ' · refreshed automatically after every run';
+}
+$('chips').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if(!b) return; proj = b.dataset.p; render(); });
+$('q').addEventListener('input', e => { q = e.target.value; render(); });
+render();
+</script>
+</body>
+</html>

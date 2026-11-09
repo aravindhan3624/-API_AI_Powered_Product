@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Assistant evaluation">
+    <test name="Golden questions">
+        <classes>
+            <class name="com.api.product.AssistantEvalTest"/>
+        </classes>
+    </test>
+</suite>

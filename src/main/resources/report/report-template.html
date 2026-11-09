@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Automation Report</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1b2438;--mute:#667089;--line:#e3e7f1;--head:#14284b;--pass:#0e8a4a;--fail:#d3322c;--block:#6b7280;--skip:#c47a0a;--accent:#2f5bd8}
+:root[data-theme=dark]{--bg:#0f1524;--card:#18203a;--ink:#e8ecf6;--mute:#9aa6c4;--line:#2a3558;--head:#0a1226;--accent:#7aa2ff}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--head);color:#fff;padding:16px 28px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header h1{font-size:20px;margin:0}header .sub{color:#b9c4e0;font-size:12px}
+header .sp{flex:1}
+button,.btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 12px;cursor:pointer;text-decoration:none;font-size:13px}
+main{padding:20px 28px;max-width:1500px;margin:auto}
+.meta{display:flex;gap:22px;flex-wrap:wrap;color:var(--mute);font-size:13px;margin-bottom:14px}.meta b{color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:10px;padding:12px 14px}
+.card .l{font-size:11px;letter-spacing:.06em;color:var(--mute);text-transform:uppercase}.card .v{font-size:28px;font-weight:700}
+.card.p{border-top-color:var(--pass)}.card.p .v{color:var(--pass)}.card.f{border-top-color:var(--fail)}.card.f .v{color:var(--fail)}
+.card.b{border-top-color:var(--block)}.card.s{border-top-color:var(--skip)}.card small{color:var(--mute)}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-bottom:18px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+.tools input[type=search]{flex:1;min-width:260px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px}
+select{padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.chip{padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-size:12px}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+details.mod{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.mod>summary{cursor:pointer;padding:11px 14px;font-weight:600;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;color:#fff;font-weight:600}
+.PASS{background:var(--pass)}.FAIL{background:var(--fail)}.BLOCKED{background:var(--block)}.SKIPPED{background:var(--skip)}.NOT_EXECUTED{background:#8a93a8}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:7px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mute);font-size:11px;text-transform:uppercase}tr.t{cursor:pointer}tr.t:hover{background:rgba(47,91,216,.07)}
+.mono{font-family:Consolas,monospace;font-size:12px;word-break:break-all}.m{font-weight:700}
+#drawer{position:fixed;top:0;right:-760px;width:740px;max-width:100%;height:100%;background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.2);transition:right .2s;overflow:auto;padding:18px 22px;z-index:20}
+#drawer.open{right:0}#drawer h2{margin:0 0 6px;font-size:17px}#drawer pre{background:var(--bg);border:1px solid var(--line);padding:10px;border-radius:8px;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto;font-size:12px}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;margin:10px 0}.kv div:nth-child(odd){color:var(--mute)}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+@media print{header button,.tools,#drawer{display:none}details.mod{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="title"></h1><div class="sub" id="sub"></div></div><div class="sp"></div>
+  <a class="btn" id="hist" href="index.html">All reports</a>
+  <span id="lk"></span>
+  <button onclick="window.print()">Print</button>
+  <button id="theme">Dark</button>
+</header>
+<main>
+  <div class="meta" id="meta"></div>
+  <div class="cards" id="cards"></div>
+  <div class="bar" id="bar"></div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search endpoint, API name, test id, base URL, API URL, method, status, category...">
+    <span id="chips"></span>
+    <select id="cat"><option value="">All categories</option></select>
+    <select id="mod"><option value="">All modules</option></select>
+    <button class="chip" id="exp">Expand all</button>
+  </div>
+  <div id="list"></div>
+</main>
+<aside id="drawer"></aside>
+<script id="data" type="application/json">/*__DATA__*/null</script>
+<script>
+const D=JSON.parse(document.getElementById('data').textContent);
+const R=D.results,esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ORDER=['FAIL','BLOCKED','SKIPPED','NOT_EXECUTED','PASS'],LABEL={PASS:'Passed',FAIL:'Failed',BLOCKED:'Blocked',SKIPPED:'Skipped',NOT_EXECUTED:'Not executed'};
+let outcomes=new Set(),open=false;
+document.title=D.project+' - API Automation Report';
+if(D.links){document.getElementById('lk').innerHTML=[['Excel',D.links.excel],['PDF',D.links.pdf],['VAPT report',D.links.vaptHtml],['VAPT PDF',D.links.vaptPdf]].map(x=>'<a class="btn" href="'+encodeURI(x[1])+'">'+x[0]+'</a>').join(' ')}
+document.getElementById('title').textContent=D.project+' - API Automation Report';
+document.getElementById('sub').textContent='Run '+D.runId+' - generated '+D.generatedAt;
+const th=document.documentElement;try{const s=localStorage.getItem('theme');if(s)th.dataset.theme=s}catch(e){}
+document.getElementById('theme').onclick=()=>{th.dataset.theme=th.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('theme',th.dataset.theme)}catch(e){}};
+const c={};R.forEach(r=>c[r.outcome]=(c[r.outcome]||0)+1);
+const total=R.length,pass=c.PASS||0,fail=c.FAIL||0,den=pass+fail,rate=den?(100*pass/den).toFixed(1):'n/a';
+const lat=R.filter(r=>r.httpStatus!=null),avg=lat.length?Math.round(lat.reduce((a,r)=>a+r.latencyMs,0)/lat.length):0;
+document.getElementById('meta').innerHTML=[['Environment',D.environment],['Base URL',D.baseUrl],['Source',D.source],['Tester',D.tester],['Started',D.startedAt],['Finished',D.finishedAt],['Duration',D.duration],['Rule pack',D.ruleVersion]].map(x=>'<span>'+x[0]+': <b>'+esc(x[1])+'</b></span>').join('');
+const card=(l,v,k,s)=>'<div class="card '+k+'"><div class="l">'+l+'</div><div class="v">'+v+'</div>'+(s?'<small>'+s+'</small>':'')+'</div>';
+document.getElementById('cards').innerHTML=card('Total',total,'')+card('Passed',pass,'p')+card('Failed',fail,'f')+card('Blocked',c.BLOCKED||0,'b')+card('Skipped',c.SKIPPED||0,'s')+card('Not executed',c.NOT_EXECUTED||0,'b')+card('Pass rate',rate+(den?'%':''),'','passed / (passed + failed) = '+pass+' / '+den)+card('Avg response',avg+' ms','','over '+lat.length+' calls');
+document.getElementById('bar').innerHTML=ORDER.map(o=>{const n=c[o]||0;return n?'<div class="'+o+'" style="width:'+(100*n/total)+'%" title="'+LABEL[o]+': '+n+'"></div>':''}).join('');
+document.getElementById('chips').innerHTML=ORDER.map(o=>'<button class="chip" data-o="'+o+'">'+LABEL[o]+' ('+(c[o]||0)+')</button>').join(' ');
+const cats=[...new Set(R.map(r=>r.category))].sort(),mods=[...new Set(R.map(r=>r.module))].sort();
+cats.forEach(x=>document.getElementById('cat').insertAdjacentHTML('beforeend','<option>'+esc(x)+'</option>'));
+mods.forEach(x=>document.getElementById('mod').insertAdjacentHTML('beforeend','<option>'+esc(x)+'</option>'));
+document.querySelectorAll('.chip[data-o]').forEach(b=>b.onclick=()=>{const o=b.dataset.o;outcomes.has(o)?outcomes.delete(o):outcomes.add(o);b.classList.toggle('on');render()});
+['q','cat','mod'].forEach(i=>document.getElementById(i).addEventListener('input',render));
+document.getElementById('exp').onclick=function(){open=!open;this.textContent=open?'Collapse all':'Expand all';render(true)};
+R.forEach((r,i)=>{r._i=i;r._s=[r.testCaseId,r.title,r.apiName,r.module,r.method,r.url,r.baseUrl,r.endpointId,r.httpStatus,r.category,r.outcome,r.remark,r.owasp].join(' ').toLowerCase()});
+function render(forceOpen){
+  const q=document.getElementById('q').value.toLowerCase().trim(),cat=document.getElementById('cat').value,mod=document.getElementById('mod').value;
+  const f=R.filter(r=>(!q||q.split(/\s+/).every(w=>r._s.includes(w)))&&(!cat||r.category===cat)&&(!mod||r.module===mod)&&(!outcomes.size||outcomes.has(r.outcome)));
+  const g={};f.forEach(r=>(g[r.module]=g[r.module]||[]).push(r));
+  const keys=Object.keys(g).sort((a,b)=>g[b].filter(r=>r.outcome==='FAIL').length-g[a].filter(r=>r.outcome==='FAIL').length||a.localeCompare(b));
+  if(!keys.length){document.getElementById('list').innerHTML='<div class="empty">No tests match the current filters.</div>';return}
+  document.getElementById('list').innerHTML=keys.map(k=>{
+    const a=g[k],p=a.filter(r=>r.outcome==='PASS').length,fl=a.filter(r=>r.outcome==='FAIL').length,dn=p+fl;
+    const isOpen=open||fl>0&&(q||outcomes.size)||q||outcomes.size;
+    return '<details class="mod" '+(isOpen?'open':'')+'><summary>'+esc(k)+' <span class="pill PASS">'+p+' pass</span>'+(fl?' <span class="pill FAIL">'+fl+' fail</span>':'')+' <span style="color:var(--mute);font-weight:400">'+a.length+' tests'+(dn?' - '+(100*p/dn).toFixed(0)+'% pass rate':'')+'</span></summary><table><thead><tr><th>Test</th><th>API</th><th>Method</th><th>URL</th><th>Category</th><th>HTTP</th><th>ms</th><th>Outcome</th></tr></thead><tbody>'+
+    a.map(r=>'<tr class="t" onclick="show('+r._i+')"><td class="mono">'+esc(r.testCaseId)+'</td><td>'+esc(r.apiName)+'</td><td class="m">'+esc(r.method)+'</td><td class="mono">'+esc(r.url||'')+'</td><td>'+esc(r.category)+'</td><td>'+esc(r.httpStatus==null?'-':r.httpStatus)+'</td><td>'+r.latencyMs+'</td><td><span class="pill '+r.outcome+'">'+esc(r.outcome)+'</span></td></tr>').join('')+'</tbody></table></details>'}).join('')}
+function show(i){const r=R[i],d=document.getElementById('drawer');
+  d.innerHTML='<button class="chip" onclick="document.getElementById(\'drawer\').classList.remove(\'open\')">Close</button><h2>'+esc(r.testCaseId)+' <span class="pill '+r.outcome+'">'+r.outcome+'</span></h2><div>'+esc(r.title)+'</div>'+
+  '<div class="kv"><div>Module</div><div>'+esc(r.module)+'</div><div>API</div><div>'+esc(r.apiName)+'</div><div>Category</div><div>'+esc(r.category)+'</div><div>Base URL</div><div class="mono">'+esc(r.baseUrl)+'</div><div>API URL</div><div class="mono">'+esc(r.method)+' '+esc(r.url)+'</div><div>Expected HTTP</div><div>'+esc((r.expectedStatus||[]).join(', ')||'-')+'</div><div>Actual HTTP</div><div>'+esc(r.httpStatus==null?'-':r.httpStatus)+'</div><div>Latency</div><div>'+r.latencyMs+' ms</div><div>Remark</div><div>'+esc(r.remark||'-')+'</div><div>Severity</div><div>'+esc(r.severity||'-')+'</div><div>Failure class</div><div>'+esc(r.failureCategory||'-')+'</div><div>OWASP / CWE</div><div>'+esc(r.owasp||'-')+'</div><div>Test version</div><div>'+r.testCaseVersion+'</div><div>Started</div><div>'+esc(r.startedAt||'-')+'</div></div>'+
+  '<h3>Request (redacted)</h3><pre>'+esc(r.requestEvidence||'-')+'</pre><h3>Response (redacted)</h3><pre>'+esc(r.responseEvidence||'-')+'</pre>';
+  d.classList.add('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('drawer').classList.remove('open')});
+render();
+</script>
+</body>
+</html>

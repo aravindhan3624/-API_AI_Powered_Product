@@ -1,0 +1,48 @@
+# Phase 3b - negatives parity, one-click assessment, PDF + VAPT, capture, local-model readiness (2026-10-22)
+
+## Deferred on purpose (do NOT run until the user says so)
+- **Ollama was NOT installed/run by this session's code.** A winget install was started (`winget install -e --id Ollama.Ollama --source winget`) and the PC then showed a blue screen (suspected memory-management error). Ollama files exist at `%LOCALAPPDATA%\Programs\Ollama` (possibly partial). The user said: only build the code, do not run it, keep everything in memory, do it later.
+- Everything is ready in code: `ai/HardwareProfile`, `ai/OllamaClient` (auto model selection), assistant "which model" intent, Studio `/api/status` hardware fields. With no Ollama running the product is unaffected (built-in engine).
+- Later, when the user agrees and the PC is stable: check Settings > Apps for a half-installed Ollama, reinstall cleanly, then `ollama pull qwen2.5:3b` (about 2 GB; recommended for this PC: 16 GB RAM, no usable GPU). Restart Studio: badge shows "AI: rules + local model". Disable any time with `-Dai.llm=off`. If hardware changes (more RAM / a real GPU) the recommendation and the model Studio picks change automatically (tiers 1.5b / 3b / 7b / 14b).
+
+## Negative generator = port of the legacy engine (works for any project)
+`ai/TestGenerator.java` (same rule-pack category names; expected results come from the rule pack). Rules kept from legacy: single wrong-password attempt + verify-login; data negatives only on non-write APIs (opt-in "include write APIs"); no negatives for Run=N rows or helper endpoints; STATE_CHECK last; date/XML/query variants; 1 MB payload never on write APIs; legacy verb-only write rule for Excel-imported projects; `negativeExclude` regexes in the model (CKYC_XL: "Customer Discovery").
+Judge (`ModelRunner.judge`): business-level rejection inside HTTP 200 bodies, info-leak, XSS echo, accepted-but-empty = validation missing (CWE-20), STATE_CHECK = critical, negatives BLOCKED when their positive does not pass (legacy `negativesBlockedReason`), lockout guard (`-Dlockout.max`, default 4).
+**Parity (offline, no network): CKYC_XL generates negatives for 111 positives = exactly the 111 positives legacy produced negatives for; for the 84 positives where legacy actually ran negatives, the count is identical in 84 of 84.** Category counts match on all data categories (BOUNDARY 41/40-50 etc. differ only by the 27 positives legacy marked "negative checks not run").
+Imported (not run): `RNSB_XL` (12 endpoints), `SPCBL_XL` (10), `TNSC_XL` (10), `CKYC_XL` (273; the 11 Groovy `Validate` rules now work via `list.find{...}`).
+
+## One-click assessment (Studio: "Run full assessment", or tick it in Import)
+`POST /api/project/{p}/assess` needs `authorized=true` (UI asks) and `confirmProduction=true` for URLs containing prod/live. It generates negatives from the positives, approves everything runnable, runs in the background and builds: HTML (module-wise, searchable), Excel (+ "VAPT Findings" sheet), **PDF test report**, **VAPT report (HTML + PDF)** with OWASP API Top 10 (2023) + CWE mapping, severity, sanitized evidence, recommendation, controls that held, limitations. History page `reports/<project>/index.html` links all of them.
+Verified on the public Petstore v2 spec: upload -> 58 negatives generated, 92 approved, 96 tests run in 99 s, 5 files produced; 5 VAPT findings (auth not enforced, forged token accepted, unexpected method, 5xx on malformed input, missing validation). PDFs rendered and inspected.
+Known limit: positives that need existing data (e.g. pet id 1) fail with 404 and their negatives are BLOCKED; automatic create-then-read chaining for OpenAPI imports is not built yet.
+
+## Playwright flow capture (built, NOT run with a real login)
+`capture/FlowCapture.java` + `CaptureAnalyzer.java`, Studio tab "Capture flow". Needs from the user only: the application URL and the hosts allowed to be recorded. The USER logs in (password, OTP, CAPTCHA) in the isolated browser window; nothing is typed by the product. Records XHR/fetch/document calls to allowed hosts only; masks tokens, cookies, passwords, OTP; never reads form values; uses installed Edge (`-Dcapture.channel=msedge|chrome|bundled`), no download. After "Stop": flow in call order, calls already in the project vs new calls (inventory gap), project endpoints never seen, and "Add captured endpoints as DRAFT". Smoke-tested only by compilation; first real test needs the user present.
+
+## Commands
+Studio: `studio.bat` -> http://localhost:8099 (listens on 127.0.0.1 only). Assistant eval: `mvn -q test -Dsuite=suites/testng-AI-EVAL.xml` (16/16).
+Secrets: environment variables (e.g. `CKYC_PASSWORD`); `-Dvar.NAME=value` for one run; `-Dotp.dialog.off=true` for unattended runs.
+
+## Still open
+CKYC DEVHOST account `apiauto` was locked on 2026-10-22 (needs admin unlock) - do not run CKYC until the user confirms. Auto data-chaining for OpenAPI imports, YAML/multipart, Ollama install (see top), user manual PDF, performance/monitoring.
+
+## Update: new Studio UI, test-data workbook, templates (2026-10-22)
+- UI rewritten: sidebar app shell, Overview dashboard (next-best-step engine, guided stepper, KPIs, outcome donut, module health, trend, VAPT severity, needs-attention, blocked reasons - all from persisted data), Test Studio (sortable, grouped, filters, result drawer with redacted request/response), Endpoints, Test Data, Documents, Capture, Reports (with run-to-run delta), History, Help & templates, command palette (Ctrl+K), shortcuts (? / g o|t|r), glossary tooltips, dark mode, remembered project/theme, drag-and-drop uploads.
+- Downloads: /templates/BRD_Template_Blank.docx, /templates/BRD_Sample_Filled.docx, /api/project/{p}/testdata (PROJECT_testdata.xlsx).
+- PROJECT_testdata.xlsx: export pre-filled from the API (README, API_TestData, Variables); upload applies payloads, headers, expected status, extract/set, Run=N, new APIs, variables; secrets converted to ${ENV:NAME}; idempotent (unchanged upload = 0 changes). Verified by round trip.
+- Flow: import -> (BRD optional) -> test data workbook -> generate negatives -> run -> HTML/Excel/PDF/VAPT.
+
+## Update 3: product site, demo vs real, dialogs, wizard (2026-10-22)
+- `/` = product landing page (sales-style, offline); `/app` = Studio. Entry paths: **Try the demo** (creates Demo_Shop against the public dummyjson sandbox, guided walkthrough) and **Test my own API** (New project wizard: file -> application URL + environment + connection check -> how to start -> create). Existing projects: select in "Current project".
+- Target application card on Overview (edit URL / environment / hosts, Check connection). Server: POST /api/demo/create, /api/import/preview, /api/check, /api/project/{p}/target, and assess `dryRun` (preview of the request count; nothing is sent).
+- All browser alert/confirm replaced by in-app dialogs: assessment dialog (URL, request-count preview, options, authorisation checkbox, extra PRODUCTION confirmation), delete confirmation, target editor.
+- Fixes: the overview crashed for any project with BLOCKED tests (regex replacement string "${..}" was read as a group reference; same bug in ExecutivePdf) which broke project switching; optional BRD is no longer the main next step; switching resets all per-project state; an overview failure no longer blocks opening a project.
+- Incident to know: about 12:06-12:08 IST a "Run full assessment" was started on project **CKYC** (the Postman import) from the OLD confirm() UI: about 2,800 tests generated, 3,067 approved, 13 executed before Studio restarted (12 unauthenticated requests reached CKYC DEVHOST; the login was blocked because CKYC_PASSWORD was not set, so no failed logins). Project CKYC still holds 3,067 ACTIVE tests; revert from projects/CKYC/history/ if unwanted.
+
+## Phase 3b-2: credentials, connection proof, live console, document import (verified 2026-10-22)
+
+- **Credentials (mandatory step)**: `GET/POST /api/project/{p}/credentials`. Types: none, login API (fields read from the login body, token auto-extracted), bearer, basic, apikey. Values go to `SecretVault` (session memory; optional AES-256-GCM vault in `~/.api-quality-studio`); the model holds only `${ENV:NAME}` refs. `SecretScrubber` (whole-word matching, so `apiName`/`pincode` are not secrets) moves clear-text secrets out at import; `POST .../secure` does it for existing projects (Overview shows a warning + button). Run full assessment refuses while referenced values are missing.
+- **Connection proof**: `POST .../probe` and `.../findbase` (`TargetProbe`). A path "exists" only if the server answers it differently from a made-up path, so a website that serves one page for everything is reported as "not the API address" (verified against the UAT web URL: 0/5, previously a false 5/5). `findbase` also tries base URLs defined in the collection (CKYC web collection: real base `https://iflowckyc.isolveapps.in`, 4/4 paths found; the `/login` page URL was wrong). `assess` aborts before generating or sending anything when the probe fails.
+- **Live console**: `RunService` keeps live results; `GET /api/run/{id}/events?from=N`, `/api/run/{id}/result/{testId}` (redacted evidence). UI view "Live run" opens when a run starts (LIVE/OFFLINE, counters, filters, click-for-detail, cancel, report links). Verified on Demo_Shop.
+- **Document import**: `DocApiImporter` (.md .txt .docx .pdf: `METHOD /path` lines incl. tables, JSON block after the line as body, `##` headings as modules, "Base URL:" line). Used by preview/import/wizard.
+- Test-data workbook creation is explained on the Test data page; assistant knowledge + eval extended (25/25).

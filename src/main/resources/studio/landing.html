@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Quality Studio - test, secure and report on any API</title>
+<meta name="description" content="Import a Postman or OpenAPI file, add valid test data and get functional, negative and security tests with HTML, Excel, PDF and VAPT reports. Runs privately on your own machine.">
+<style>
+:root{--bg:#fff;--alt:#f4f6fc;--ink:#12192e;--mute:#5d6886;--line:#e2e7f3;--brand:#2f5bd8;--brand2:#6a8cff;--dark:#0c1630;--ok:#0e8a4a;--bad:#d3322c;--warn:#c47a0a}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1226;--alt:#0f1936;--ink:#e9eefb;--mute:#a1acc9;--line:#233055;--dark:#070d1e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:16px/1.6 "Segoe UI",system-ui,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+a{color:inherit;text-decoration:none}.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:26px;height:64px}.logo{font-weight:800;font-size:18px;display:flex;gap:10px;align-items:center}.logo i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+nav .links{display:flex;gap:22px;color:var(--mute);font-size:14.5px;margin-left:12px}nav .links a:hover{color:var(--ink)}nav .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:11px;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--bg);color:var(--ink);transition:transform .12s,box-shadow .12s}.btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(47,91,216,.18)}
+.btn.p{background:linear-gradient(135deg,var(--brand),#4a74f5);color:#fff;border-color:transparent}.btn.lg{padding:14px 26px;font-size:16.5px;border-radius:13px}
+.hero{background:radial-gradient(1200px 500px at 70% -10%,rgba(106,140,255,.25),transparent),linear-gradient(180deg,var(--alt),var(--bg));padding:76px 0 56px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+.tag{display:inline-block;background:rgba(47,91,216,.12);color:var(--brand);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;margin-bottom:18px}
+h1{font-size:50px;line-height:1.1;margin:0 0 18px;letter-spacing:-.02em}h1 em{font-style:normal;background:linear-gradient(135deg,var(--brand),#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--mute);max-width:560px}.cta{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 14px}.small{font-size:13.5px;color:var(--mute)}
+.mock{background:var(--bg);border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 80px rgba(20,40,110,.22);overflow:hidden}.mock .bar{display:flex;gap:6px;padding:11px 14px;background:var(--alt);border-bottom:1px solid var(--line)}.mock .bar i{width:10px;height:10px;border-radius:50%;background:#c5cde3}
+.mock .in{padding:18px;display:grid;gap:12px}.mhero{background:linear-gradient(120deg,#1d3a8a,#3b6cf0);color:#fff;border-radius:12px;padding:14px 16px;font-size:13px}.mhero b{display:block;font-size:15px}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.kp div{border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:12px;color:var(--mute)}.kp b{display:block;font-size:22px;color:var(--ink)}
+.rowc{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px}
+.hb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute);margin:4px 0}.hb span{width:70px}.hb i{flex:1;height:9px;border-radius:6px;background:var(--line);position:relative;overflow:hidden}.hb i:after{content:"";position:absolute;inset:0;width:var(--w);background:var(--c)}
+.trust{padding:22px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}.trust .wrap{display:flex;gap:30px;flex-wrap:wrap;justify-content:center;color:var(--mute);font-size:14.5px;font-weight:600}
+section{padding:78px 0}section.alt{background:var(--alt)}h2{font-size:34px;line-height:1.2;margin:0 0 12px;letter-spacing:-.01em}.sub{color:var(--mute);font-size:17.5px;max-width:680px;margin:0 0 38px}
+.grid{display:grid;gap:20px}.g3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:24px;transition:transform .15s,box-shadow .15s}.card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(20,40,110,.12)}.card h3{margin:12px 0 6px;font-size:18.5px}.card p{margin:0;color:var(--mute);font-size:15px}
+.ic{width:44px;height:44px;border-radius:12px;background:rgba(47,91,216,.12);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:800}
+.step{position:relative;padding-top:6px}.step .n{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}.path{border:2px solid var(--line);border-radius:20px;padding:30px;background:var(--bg)}.path.hi{border-color:var(--brand);box-shadow:0 18px 50px rgba(47,91,216,.18)}.path h3{font-size:24px;margin:8px 0}.path ul{padding-left:20px;color:var(--mute)}.path li{margin:6px 0}
+.badge{display:inline-block;border-radius:999px;font-size:12px;font-weight:800;padding:3px 12px;background:rgba(14,138,74,.13);color:var(--ok)}.badge.b2{background:rgba(47,91,216,.13);color:var(--brand)}
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.doc{border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;background:var(--bg)}.doc b{display:block;font-size:28px;color:var(--brand)}.doc small{color:var(--mute)}
+details{border:1px solid var(--line);border-radius:13px;padding:14px 18px;margin:10px 0;background:var(--bg)}summary{cursor:pointer;font-weight:700}details p{color:var(--mute);margin:10px 0 0}
+.band{background:linear-gradient(120deg,#17327f,#3b6cf0);color:#fff;border-radius:24px;padding:48px;text-align:center}.band h2{color:#fff}.band p{opacity:.9;max-width:600px;margin:0 auto 24px}.band .btn{border:none}
+footer{padding:36px 0;color:var(--mute);font-size:14px;border-top:1px solid var(--line)}footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
+@media(max-width:900px){.hero .wrap,.two{grid-template-columns:1fr}h1{font-size:38px}nav .links{display:none}}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="logo" href="/"><i></i>API Quality Studio</a><div class="links"><a href="#features">Features</a><a href="#how">How it works</a><a href="#reports">Reports</a><a href="#safe">Safety</a><a href="#faq">FAQ</a></div><span class="sp"></span><a class="btn" href="/app">Open Studio</a><a class="btn p" href="/app?demo=1">Try the live demo</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <div>
+    <span class="tag">Private &middot; runs on your own PC &middot; no API key</span>
+    <h1>Test any API in minutes. <em>Prove</em> it is secure.</h1>
+    <p class="lead">Import a Postman or OpenAPI file, add valid test data, and get functional, negative and security tests - plus HTML, Excel, PDF and a VAPT report you can hand to auditors.</p>
+    <div class="cta"><a class="btn p lg" href="/app?demo=1">Try the live demo</a><a class="btn lg" href="/app?new=1">Test my own API</a></div>
+    <div class="small">The demo uses a public sandbox: nothing real is touched. Your own API is tested only after you confirm you are authorised.</div>
+  </div>
+  <div class="mock" aria-hidden="true"><div class="bar"><i></i><i></i><i></i></div><div class="in">
+    <div class="mhero"><span style="opacity:.8;font-size:11px;letter-spacing:.08em">NEXT BEST STEP</span><b>Run the full assessment</b>Generates negative &amp; security tests from your valid data, runs them and builds the reports.</div>
+    <div class="kp"><div>Endpoints<b>73</b></div><div>Pass rate<b style="color:var(--ok)">92%</b></div><div>Findings<b style="color:var(--bad)">5</b></div></div>
+    <div class="rowc"><svg viewBox="0 0 120 120" width="110" height="110"><circle cx="60" cy="60" r="42" fill="none" stroke="#e2e7f3" stroke-width="18"/><circle cx="60" cy="60" r="42" fill="none" stroke="#0e8a4a" stroke-width="18" stroke-dasharray="190 264" transform="rotate(-90 60 60)"/><circle cx="60" cy="60" r="42" fill="none" stroke="#d3322c" stroke-width="18" stroke-dasharray="40 264" stroke-dashoffset="-190" transform="rotate(-90 60 60)"/></svg>
+      <div><div class="hb"><span>critical</span><i style="--w:30%;--c:#a4161a"></i></div><div class="hb"><span>high</span><i style="--w:45%;--c:#d3322c"></i></div><div class="hb"><span>medium</span><i style="--w:70%;--c:#c47a0a"></i></div><div class="hb"><span>low</span><i style="--w:20%;--c:#2f5bd8"></i></div></div></div>
+  </div></div>
+</div></header>
+
+<div class="trust"><div class="wrap"><span>&#10003; 100% local - data never leaves your network</span><span>&#10003; Postman &amp; OpenAPI / Swagger</span><span>&#10003; Encrypted &amp; cookie-session APIs</span><span>&#10003; OWASP API Top 10 mapped</span><span>&#10003; Built-in offline AI assistant</span></div></div>
+
+<section id="features"><div class="wrap"><h2>Everything between "we have an API" and "we can prove it works"</h2><p class="sub">One workspace for functional, negative, boundary and security testing, with evidence you can share.</p>
+<div class="grid g3">
+<div class="card"><div class="ic">1</div><h3>Import anything</h3><p>Postman collections, OpenAPI 3 and Swagger 2. Unsupported features are reported, never silently dropped.</p></div>
+<div class="card"><div class="ic">2</div><h3>Test-data workbook</h3><p>Download <b>Project_testdata.xlsx</b> pre-filled from your API, enter valid data, upload. Secrets stay in environment variables.</p></div>
+<div class="card"><div class="ic">3</div><h3>Negative &amp; security tests</h3><p>Wrong types, missing fields, injection markers, no token, forged token, wrong method, oversized body - each changes exactly one thing of a valid request.</p></div>
+<div class="card"><div class="ic">4</div><h3>Chaining &amp; sessions</h3><p>Login once, reuse tokens and cookies, extract ids for later steps, CSRF headers and encrypted envelopes handled.</p></div>
+<div class="card"><div class="ic">5</div><h3>Smart assistant</h3><p>Ask why a test failed, what is blocked, or what to test next. Reads your BRD. Works offline, no model or key required.</p></div>
+<div class="card"><div class="ic">6</div><h3>Record from the browser</h3><p>You log in to your web app; the studio records the API calls it makes and compares them with your collection to find gaps.</p></div>
+</div></div></section>
+
+<section class="alt" id="start"><div class="wrap"><h2>Two ways to start</h2><p class="sub">Explore safely first, or go straight to your own API. They are separate on purpose.</p>
+<div class="two">
+<div class="path"><span class="badge">DEMO</span><h3>See it work in one click</h3><ul><li>A ready-made shop API on a public sandbox</li><li>Guided walkthrough: generate, run, read the VAPT report</li><li>No setup, no URL to enter, nothing real is touched</li></ul><a class="btn lg" href="/app?demo=1">Try the live demo</a></div>
+<div class="path hi"><span class="badge b2">YOUR API</span><h3>Test your own application</h3><ul><li>Import your Postman / OpenAPI file</li><li>Enter your <b>application URL</b> and environment</li><li>Add valid test data, confirm authorisation, run</li></ul><a class="btn p lg" href="/app?new=1">Test my own API</a></div>
+</div></div></section>
+
+<section id="how"><div class="wrap"><h2>How it works</h2><p class="sub">Five steps, the same every time.</p>
+<div class="grid g4"><div class="step"><div class="n">1</div><h3>Import</h3><p class="small">Upload your collection or spec and enter the application URL.</p></div><div class="step"><div class="n">2</div><h3>Test data</h3><p class="small">Fill valid data in the generated Excel workbook and upload it back.</p></div><div class="step"><div class="n">3</div><h3>Generate</h3><p class="small">Negative, boundary and security tests are derived from that valid data.</p></div><div class="step"><div class="n">4</div><h3>Run</h3><p class="small">After you confirm authorisation, tests run with safe limits and live progress.</p></div></div>
+<div style="margin-top:22px" class="grid g4"><div class="step"><div class="n">5</div><h3>Report</h3><p class="small">Share HTML, Excel, PDF and the VAPT report; compare runs over time.</p></div></div></div></section>
+
+<section class="alt" id="reports"><div class="wrap"><h2>Reports people actually read</h2><p class="sub">Every run produces five files in a project folder, with history and run-to-run comparison.</p>
+<div class="docs"><div class="doc"><b>HTML</b><small>Module-wise, searchable by endpoint and URL, redacted request / response per test</small></div><div class="doc"><b>Excel</b><small>Summary, modules, failures, security and VAPT sheets</small></div><div class="doc"><b>PDF</b><small>Executive test report for managers and auditors</small></div><div class="doc"><b>VAPT</b><small>OWASP API Top 10 + CWE findings with evidence and fixes</small></div><div class="doc"><b>VAPT PDF</b><small>Printable security assessment with scope, method and limitations</small></div></div></div></section>
+
+<section id="safe"><div class="wrap"><h2>Built for safe testing</h2><p class="sub">Because automated testing can hurt a real system, the studio is cautious by default.</p>
+<div class="grid g3">
+<div class="card"><div class="ic">&#10003;</div><h3>Authorisation first</h3><p>Nothing is sent until you confirm you are authorised. Production-looking URLs need a second, explicit confirmation.</p></div>
+<div class="card"><div class="ic">&#10003;</div><h3>Account lockout guard</h3><p>Login endpoints get one wrong-password attempt and a verify - never repeated guessing that could lock a shared account.</p></div>
+<div class="card"><div class="ic">&#10003;</div><h3>No junk data</h3><p>Create / update / delete endpoints get security checks only unless you opt in, so bad requests do not create records.</p></div>
+<div class="card"><div class="ic">&#10003;</div><h3>Secrets stay secret</h3><p>Passwords, tokens, cookies and OTPs are masked in evidence and never stored in project files.</p></div>
+<div class="card"><div class="ic">&#10003;</div><h3>Honest results</h3><p>Pass, fail, <i>blocked</i> and not-executed are kept separate. Findings are indicators that need confirmation, not claims.</p></div>
+<div class="card"><div class="ic">&#10003;</div><h3>Private by design</h3><p>Runs on your machine. No cloud, no API key, no data sent anywhere. The assistant works offline.</p></div>
+</div></div></section>
+
+<section class="alt" id="faq"><div class="wrap"><h2>Questions</h2><p class="sub">&nbsp;</p>
+<details><summary>Do I need a BRD or documentation?</summary><p>No. A Postman collection or OpenAPI file plus valid test data is enough. A BRD is optional and adds business rules and flow mapping. Templates are included.</p></details>
+<details><summary>Where do I enter my application URL?</summary><p>In the "Test my own API" wizard (step 2) and later on the project Overview under <b>Target application</b>, where you can also check the connection.</p></details>
+<details><summary>Do I need an API key or the internet?</summary><p>No. Everything runs locally. The built-in assistant works without any model; an optional local model can be added later.</p></details>
+<details><summary>Can it test encrypted or session-based APIs?</summary><p>Yes: cookie sessions, CSRF headers, token chaining and RSA + AES-GCM request envelopes are supported.</p></details>
+<details><summary>Will it change my data?</summary><p>Only requests you have approved are sent, after you confirm authorisation. Write endpoints get security checks only by default.</p></details>
+</div></section>
+
+<section><div class="wrap"><div class="band"><h2>See it in two minutes</h2><p>Open the demo project, press <b>Run full assessment</b>, and read the VAPT report it produces.</p><a class="btn lg" href="/app?demo=1" style="color:#17327f">Try the live demo</a> &nbsp; <a class="btn lg" href="/app?new=1" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.55)">Test my own API</a></div></div></section>
+<footer><div class="wrap"><span>API Quality Studio &middot; runs locally on your machine</span><span><a href="/app">Open Studio</a> &middot; <a href="/templates/BRD_Template_Blank.docx">BRD template</a> &middot; <a href="/templates/BRD_Sample_Filled.docx">BRD sample</a></span></div></footer>
+</body>
+</html>

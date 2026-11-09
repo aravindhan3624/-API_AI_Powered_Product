@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Model-driven API Automation">
+    <test name="Model run">
+        <classes>
+            <class name="com.api.product.ModelRunTest"/>
+        </classes>
+    </test>
+</suite>

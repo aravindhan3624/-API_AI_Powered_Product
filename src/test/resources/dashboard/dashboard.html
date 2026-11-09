@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Automation Console</title>
+<!--STATIC_STATE-->
+<style>
+:root{
+  --bg:#eef2f7; --card:#ffffff; --ink:#15212e; --muted:#667385; --line:#e2e8f0; --soft:#f6f8fb;
+  --navy:#0b2341; --navy2:#173e6b; --blue:#1565c0; --blue-lt:#e6f0fc;
+  --green:#1e8449; --green-lt:#e1f4e8; --red:#c0392b; --red-lt:#fbe3df;
+  --amber:#c27c0e; --amber-lt:#fdefd9; --grey:#7f8c8d; --grey-lt:#eceff2; --violet:#6c3fc9; --violet-lt:#f1e9ff;
+  --get:#49cc90; --post:#fca130; --put:#61affe; --patch:#9012fe; --delete:#f93e3e;
+  --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.07);
+  --mono:"Cascadia Code",Consolas,"SFMono-Regular",Menlo,monospace;
+  --term:#0d1726; --term-ink:#cfe0f5;
+}
+:root[data-theme="dark"]{
+  --bg:#0c1522; --card:#132033; --ink:#e3ecf7; --muted:#8fa1b8; --line:#22344d; --soft:#17263b;
+  --blue-lt:#16314f; --green-lt:#123526; --red-lt:#3a1b1b; --amber-lt:#3a2c12; --grey-lt:#1e2b3c; --violet-lt:#2a1f47;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35); --term:#08101b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+.mono{font-family:var(--mono)}
+
+/* ── Top bar ── */
+.topbar{background:linear-gradient(100deg,var(--navy),var(--navy2) 60%,#1d4f86);color:#fff;padding:12px 26px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:17px;letter-spacing:.2px}
+.brand .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#36a3ff,#1565c0);display:grid;place-items:center;font-weight:800;font-size:12.5px;box-shadow:0 4px 12px rgba(21,101,192,.5)}
+.brand small{display:block;font-weight:400;font-size:11.5px;opacity:.72;letter-spacing:.4px}
+.tabs{display:flex;gap:6px;margin-left:14px;flex-wrap:wrap}
+.tab{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#dfe8f3;padding:6px 12px;border-radius:999px;font-size:12.5px}
+.tab.active{background:#fff;color:var(--navy);border-color:#fff;font-weight:600}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:12px;letter-spacing:.4px}
+.pill.run{background:rgba(73,204,144,.16);color:#8ff0c2}
+.pill.pause{background:rgba(252,161,48,.2);color:#ffd08a}
+.pill.done{background:rgba(255,255,255,.14);color:#fff}
+.pill.off{background:rgba(249,62,62,.18);color:#ffb3b3}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.run .dot{animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(143,240,194,.7)}100%{box-shadow:0 0 0 9px rgba(143,240,194,0)}}
+.clock{font-variant-numeric:tabular-nums;opacity:.85;font-size:13px}
+.ctl{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:10px;padding:8px 15px;font-weight:700;font-size:13px;color:#fff;transition:filter .15s,transform .05s}
+.ctl:hover{filter:brightness(1.1)} .ctl:active{transform:translateY(1px)} .ctl:disabled{opacity:.5;cursor:default}
+.ctl.pause{background:#e08e0b} .ctl.resume{background:#1e9e5a}
+.ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:7px 11px;font-size:13px}
+
+main{max-width:none;margin:0;padding:18px 22px 50px}
+
+/* ── Hero ── */
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 28px;margin-bottom:16px}
+.hero h1{margin:0;font-size:24px;letter-spacing:-.2px}
+.hero .meta{color:var(--muted);font-size:13px;display:flex;gap:18px;flex-wrap:wrap}
+.hero .meta b{color:var(--ink);font-weight:600}
+.env{background:var(--blue-lt);color:var(--blue);font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:6px;margin-left:10px;vertical-align:middle}
+.banner{border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;display:none}
+.banner.show{display:block}
+.banner.info{background:var(--blue-lt);color:var(--blue)}
+.banner.warn{background:var(--amber-lt);color:var(--amber)}
+.banner.pause{background:var(--amber-lt);color:var(--amber);font-weight:600;border:1px dashed var(--amber)}
+
+/* ── KPI ── */
+.kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 15px;border-top:4px solid var(--c,var(--blue));cursor:default}
+.kpi.click{cursor:pointer} .kpi.click:hover{outline:2px solid var(--c)}
+.kpi .l{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+.kpi .v{font-size:26px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--c,var(--ink))}
+.kpi .s{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Overview row ── */
+.overview{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.35fr);gap:14px;margin-bottom:14px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px}
+.card h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.prog .top{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+.prog .top b{color:var(--ink)}
+.bar{height:14px;border-radius:999px;background:var(--grey-lt);overflow:hidden;display:flex}
+.bar span{height:100%;transition:width .5s ease}
+.bar .p{background:var(--green)} .bar .f{background:var(--red)} .bar .s{background:var(--amber)} .bar .n{background:var(--grey)}
+.bar .r{background:repeating-linear-gradient(45deg,#5b9bf0,#5b9bf0 8px,#7fb1f5 8px,#7fb1f5 16px);animation:slide 1s linear infinite}
+@keyframes slide{to{background-position:32px 0}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.stat{background:var(--soft);border-radius:10px;padding:9px 11px}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.stat .x{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.donutwrap{display:flex;align-items:center;gap:16px}
+.donut{position:relative;width:132px;height:132px;flex:none}
+.donut svg{transform:rotate(-90deg)}
+.donut .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.donut .c b{font-size:24px;display:block;line-height:1.1}
+.donut .c small{color:var(--muted);font-size:11px}
+.legend{display:grid;gap:5px;font-size:12.5px;flex:1}
+.legend div{display:flex;align-items:center;gap:8px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.legend span{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.tstate{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:8px;vertical-align:middle;white-space:nowrap}
+.tstate.run{background:var(--blue-lt,#e8f0fe);color:var(--blue,#1f5fbf)}.tstate.run i{width:8px;height:8px;border-radius:50%;background:currentColor;animation:tpulse 1.1s infinite}
+.tstate.done{background:#e3f4ea;color:#1e8449}.tstate.pend{background:#eef0f3;color:#6b7280}@keyframes tpulse{50%{opacity:.25}}
+.tcard.finished{box-shadow:inset 0 0 0 1px rgba(30,132,73,.35)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.typesum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:1200px){.typesum{grid-template-columns:1fr}}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 18px;border-top:5px solid var(--c);cursor:pointer}
+.tcard:hover{outline:2px solid var(--c)}
+.tcard h3{margin:0 0 2px;font-size:15px;color:var(--c)}
+.tcard .d{color:var(--muted);font-size:12.5px;margin-bottom:10px}
+.tcard .nums{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;text-align:center}
+.tcard .nums b{display:block;font-size:19px;line-height:1.1}
+.tcard .nums span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.tcard .tb{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--grey-lt);margin-top:10px}
+.tcard .tb i{display:block;height:100%}
+.split .stat .x small{font-size:11.5px;color:var(--muted);font-weight:600}
+.modules{max-height:205px;overflow:auto;display:grid;gap:7px;padding-right:4px}
+.mod{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:10px;align-items:center;font-size:12.5px;cursor:pointer;border-radius:8px;padding:3px 4px}
+.mod:hover{background:var(--soft)} .mod.on{background:var(--blue-lt)}
+.mod .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mod .nm small{color:var(--muted)}
+.mod .bar{height:9px}
+.mod .ct{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ── Execution map / failure reasons / response chart ── */
+.row2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+.card h3.hx{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.legendmini{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;flex-wrap:wrap}
+.legendmini i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.map{display:flex;flex-direction:column;gap:7px;max-height:236px;overflow:auto;padding-right:4px}
+.maprow{display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:start}
+.maprow .ml{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.maprow .ml b{color:var(--ink);font-weight:600}
+.tiles{display:flex;flex-wrap:wrap;gap:3px}
+.tile{width:12px;height:12px;border-radius:3px;background:var(--grey-lt);cursor:pointer;transition:transform .12s}
+.tile:hover{transform:scale(1.7);box-shadow:0 0 0 1px var(--ink)}
+.tile.PASS{background:var(--green)} .tile.FAIL{background:var(--red)} .tile.SKIP{background:var(--amber)} .tile.NA{background:var(--grey)}
+.tile.RUNNING,.tile.WAITING_OTP{background:var(--blue);animation:blink 1s infinite}
+.tile.neg{border-radius:50%}
+@keyframes blink{50%{opacity:.3}}
+.reasons{display:grid;gap:9px;max-height:236px;overflow:auto}
+.rsn{font-size:12.5px;cursor:pointer;border-radius:8px;padding:2px 4px}
+.rsn:hover{background:var(--soft)}
+.rsn .top{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px}
+.rsn .top span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rsn .top b{font-variant-numeric:tabular-nums;color:var(--red)}
+.rsn .bar{height:8px}
+.rsn .bar span{background:linear-gradient(90deg,#e74c3c,#c0392b)}
+.chartcard{margin-bottom:14px}
+.chart{width:100%;height:140px;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--muted);font-size:11px}
+.kbd{display:inline-block;border:1px solid rgba(255,255,255,.35);border-radius:5px;padding:0 5px;font-size:11px;margin-left:4px}
+
+/* ── Now executing ── */
+.now{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;border-left:5px solid var(--blue)}
+.now.otp{border-left-color:var(--amber);background:linear-gradient(90deg,var(--amber-lt),var(--card))}
+.now.paused{border-left-color:var(--amber)}
+.now.done{border-left-color:var(--green)}
+.spinner{width:32px;height:32px;border-radius:50%;border:3px solid var(--blue-lt);border-top-color:var(--blue);animation:spin .8s linear infinite;flex:none}
+.now.otp .spinner{border-top-color:var(--amber)}
+.now.paused .spinner{animation:none;border-color:var(--amber);display:grid;place-items:center;color:var(--amber);font-weight:900;font-size:13px}
+.now.done .spinner{animation:none;border-color:var(--green);display:grid;place-items:center;color:var(--green);font-weight:800}
+@keyframes spin{to{transform:rotate(360deg)}}
+.now .t{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+.now .h{font-size:16px;font-weight:650;margin:2px 0}
+.now .e{font-family:var(--mono);font-size:12.5px;color:var(--muted);word-break:break-all}
+.now .step{margin-left:auto;text-align:right;color:var(--muted);font-size:13px;max-width:40%}
+.now .step b{display:block;color:var(--ink)}
+
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.panel .ph{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel .ph h3{margin:0;font-size:14.5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips.r{margin-left:auto}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--muted)}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+:root[data-theme="dark"] .chip.on{background:#2e6fbf;border-color:#2e6fbf}
+.search{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;width:190px}
+.tablewrap{overflow:auto;max-height:640px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--soft);color:var(--muted);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:9px 11px;border-bottom:1px solid var(--line);z-index:1;white-space:nowrap}
+td{padding:8px 11px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--soft)}
+tr.row.running td{background:var(--blue-lt)}
+tr.row.waiting td{background:var(--amber-lt)}
+.status{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:11px;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
+.st-PASS{background:var(--green-lt);color:var(--green)}
+.st-FAIL{background:var(--red-lt);color:var(--red)}
+.st-SKIP{background:var(--amber-lt);color:var(--amber)}
+.st-NA{background:var(--grey-lt);color:var(--grey)}
+.st-RUNNING{background:var(--blue-lt);color:var(--blue)}
+.st-WAITING_OTP{background:var(--amber-lt);color:var(--amber)}
+.st-QUEUED{background:var(--grey-lt);color:var(--muted)}
+.method{display:inline-block;min-width:52px;text-align:center;color:#fff;font-weight:700;font-size:10.5px;padding:3px 6px;border-radius:6px}
+.m-GET{background:var(--get)} .m-POST{background:var(--post)} .m-PUT{background:var(--put)} .m-PATCH{background:var(--patch)} .m-DELETE{background:var(--delete)}
+.api{max-width:300px}
+.api .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.api .ep{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.3px}
+.tag.neg{background:var(--violet-lt);color:var(--violet)}
+.tag.pos{background:var(--blue-lt);color:var(--blue)}
+.tag.slow{background:var(--amber-lt);color:var(--amber);margin-left:4px}
+.remark{max-width:360px}
+tr.row.flash td{animation:flash 1.6s ease}
+@keyframes flash{0%,40%{background:#fff3c4}100%{background:inherit}}
+.jump{border:1px solid var(--blue);color:var(--blue);background:var(--card);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700}
+.jump:hover{background:var(--blue-lt)}
+.followrun{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.now{cursor:pointer}
+.banner.otpnote{background:#f1e9ff;color:#6c3483;font-weight:700;border:1px dashed #9b59b6}
+.reportbar{display:none;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:14px 18px;border-radius:14px;background:linear-gradient(100deg,var(--green-lt),var(--card));border:1px solid var(--green);box-shadow:var(--shadow)}
+.reportbar.show{display:flex}
+.reportbar .rt{font-weight:800;font-size:15px;color:var(--green)}
+.reportbar .rs{color:var(--muted);font-size:12.5px;margin-top:1px}
+.reportbar .rb{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.rbtn{display:inline-flex;align-items:center;gap:7px;border-radius:11px;padding:10px 18px;font-weight:800;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.rbtn:hover{background:var(--blue-lt);border-color:var(--blue)}
+.rbtn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.rbtn.primary:hover{filter:brightness(1.1);background:var(--green)}
+.reportbar .prow{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.reportbar .pl{font-weight:700;min-width:130px}
+.reportbar .pv{color:var(--muted);font-size:12.5px;word-break:break-all;flex:1}
+.copybtn{border:1px solid var(--amber);background:var(--card);color:var(--amber);border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;margin-left:8px;cursor:pointer}
+.recpill{display:none;align-items:center;gap:7px;border-radius:999px;padding:6px 12px;font-weight:800;font-size:12px;background:rgba(224,40,40,.22);color:#ffb3b3;letter-spacing:.3px}
+.recpill.show{display:inline-flex}
+.recpill i{width:9px;height:9px;border-radius:50%;background:#ff4d4d;animation:recblink 1s infinite}
+@keyframes recblink{50%{opacity:.2}}
+.recpill b{font-variant-numeric:tabular-nums}
+.recov{position:fixed;inset:0;background:rgba(10,20,35,.62);display:none;align-items:center;justify-content:center;z-index:120;padding:16px}
+.recov.show{display:flex}
+.recbox{background:var(--card);color:var(--ink);border-radius:22px;width:min(580px,100%);padding:28px 32px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.recbox h2{margin:6px 0 4px;font-size:22px}
+.recbox p{color:var(--muted);margin:4px 0 10px}
+.recbox ol{text-align:left;margin:10px auto 14px;padding-left:22px;max-width:470px;line-height:1.7}
+.recbox .recerr{color:var(--red);font-weight:700;font-size:13px;min-height:20px;margin-bottom:8px}
+.recbox .recbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.recbox small{display:block;margin-top:12px;color:var(--muted)}
+.shotcorner{position:fixed;right:18px;bottom:18px;width:230px;border-radius:12px;overflow:hidden;background:var(--card);border:2px solid var(--green);box-shadow:0 10px 30px rgba(0,0,0,.28);z-index:30;display:none}
+.shotcorner.show{display:block}
+.shotcorner img{width:100%;display:block;background:#000}
+.shotcorner span{display:block;font-size:11px;font-weight:700;padding:5px 9px;color:var(--green)}
+.shotcorner button{position:absolute;top:4px;right:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;width:22px;height:22px;cursor:pointer}
+tr.grp{cursor:pointer}
+tr.grp td{background:var(--soft);padding:9px 14px;border-bottom:1px solid var(--line);white-space:normal;font-size:13px}
+tr.grp:hover td{background:var(--blue-lt)}
+tr.grp .gcar{display:inline-block;width:16px;color:var(--muted)}
+tr.grp .gcnt{color:var(--muted);margin-left:8px;font-size:12px}
+tr.grp .gcnt i{font-style:normal;font-weight:700}
+tr.grp .gcnt .ok{color:var(--green)} tr.grp .gcnt .ko{color:var(--red)}
+.xp{border:0;background:none;color:var(--muted);font-size:13px;width:22px;height:22px;border-radius:6px;cursor:pointer}
+.xp:hover{background:var(--blue-lt);color:var(--blue)}
+tr.row.open td{background:var(--blue-lt)}
+tr.xrow td{background:var(--soft);padding:10px 14px 12px 44px;border-bottom:1px solid var(--line);white-space:normal}
+.xgrid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:5px 14px;font-size:12.5px}
+.xgrid .k{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding-top:1px}
+.xgrid .v{word-break:break-word}
+.xgrid .v.mono{font-family:var(--mono);font-size:11.5px}
+.xmore{margin-top:8px;font-size:12px}
+.xmore a{color:var(--blue);cursor:pointer;font-weight:700}
+.remark .cat{font-size:10.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+.remark .cat.FAIL{color:var(--red)} .remark .cat.SKIP{color:var(--amber)} .remark .cat.NA{color:var(--grey)}
+.remark .why{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ai{font-size:11.5px;font-weight:700}
+.ai.PASS{color:var(--green)} .ai.FAIL{color:var(--red)} .ai.NA{color:var(--muted);font-weight:400}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+
+.http{font-variant-numeric:tabular-nums;white-space:nowrap}
+.http b{font-size:13px}
+.http small{display:block;color:var(--muted);font-size:10.5px}
+.http.ok b{color:var(--green)} .http.mm b{color:var(--amber)}
+.urlgrid{display:grid;grid-template-columns:110px 1fr auto;gap:6px 10px;align-items:center;font-size:12.5px}
+.urlgrid .k{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.urlgrid .v{font-family:var(--mono);word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+.urlgrid .v.full{font-weight:700}
+.copy{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:7px;padding:3px 8px;font-size:11px}
+.copy:hover{color:var(--blue);border-color:var(--blue)}
+
+/* ── Live console (terminal) ── */
+.console{background:var(--term);color:var(--term-ink)}
+.console .ph{border-bottom:1px solid #1e2d44}
+.console .ph h3{color:#fff;display:flex;align-items:center;gap:8px}
+.console .chip{background:transparent;border-color:#2a3d5a;color:#9bb3d1}
+.console .chip.on{background:#2e6fbf;border-color:#2e6fbf;color:#fff}
+.console .search{background:#122036;border-color:#2a3d5a;color:#e2ecf8;width:140px}
+.lights{display:flex;gap:5px}.lights i{width:10px;height:10px;border-radius:50%;display:block}
+.log{overflow:auto;height:640px;padding:8px 0;font:12px/1.55 var(--mono)}
+.ev{display:grid;grid-template-columns:66px 74px 1fr;gap:8px;padding:2px 14px}
+.ev:hover{background:#13233a}
+.ev .tm{color:#5f7898;font-variant-numeric:tabular-nums}
+.ev .tc{font-weight:700;color:#7fb4ff;cursor:pointer}
+.ev .tx{word-break:break-word}
+.ev.PASS .tx{color:#6be3a2} .ev.FAIL .tx{color:#ff8a80} .ev.WARN .tx{color:#ffcc66} .ev.STEP .tx{color:#8ea6c4} .ev.INFO .tx{color:#e2ecf8;font-weight:600}
+.lvl{display:inline-block;min-width:38px;font-size:10px;font-weight:800;padding:0 4px;border-radius:4px;margin-right:6px;text-align:center}
+.ev.PASS .lvl{background:#1f4d36;color:#6be3a2} .ev.FAIL .lvl{background:#4d2020;color:#ff8a80} .ev.WARN .lvl{background:#4a3a15;color:#ffcc66}
+.ev.STEP .lvl{background:#1b2c44;color:#8ea6c4} .ev.INFO .lvl{background:#1c3b66;color:#cfe0f5}
+.follow{margin-left:auto;font-size:11.5px;color:#9bb3d1;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+
+/* ── Drawer ── */
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(780px,96vw);background:var(--card);box-shadow:-10px 0 40px rgba(0,0,0,.25);transform:translateX(105%);transition:transform .25s ease;z-index:40;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawer .dh{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.drawer .dh h2{margin:6px 0 0;font-size:18px}
+.drawer .dh .x{margin-left:auto;border:0;background:var(--soft);color:var(--ink);border-radius:8px;width:34px;height:34px;font-size:18px}
+.drawer .db{overflow:auto;padding:18px 22px 40px}
+.sec{margin-bottom:18px}
+.sec h4{margin:0 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.ea{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--soft)}
+.box.exp{border-left:4px solid var(--blue)}
+.box.act{border-left:4px solid var(--green)}
+.box.act.bad{border-left-color:var(--red)}
+.checks{width:100%;font-size:12.5px}
+.checks td{padding:6px 8px}
+.ok{color:var(--green);font-weight:700} .ko{color:var(--red);font-weight:700}
+pre.code{background:var(--term);color:var(--term-ink);border-radius:10px;padding:12px 14px;font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:0}
+.reason{border-radius:10px;padding:11px 13px;background:var(--red-lt);color:var(--red)}
+.reason.pass{background:var(--green-lt);color:var(--green)}
+.reason.skip{background:var(--amber-lt);color:var(--amber)}
+.reason.na{background:var(--grey-lt);color:var(--ink)}
+.reason b{display:block;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.reason .act{margin-top:7px;font-size:12.5px;opacity:.9}
+.shade{position:fixed;inset:0;background:rgba(15,27,45,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:35}
+.shade.open{opacity:1;pointer-events:auto}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:12px;font-weight:600;opacity:0;transition:all .25s;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* ── SweetAlert-style OTP modal ── */
+.swal-overlay{position:fixed;inset:0;background:rgba(10,20,35,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.swal-overlay.show{display:flex;animation:fade .2s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.swal{background:#fff;color:#1c2833;border-radius:24px;width:min(540px,100%);padding:0 0 24px;text-align:center;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.4);animation:pop .3s cubic-bezier(.2,1.4,.4,1);overflow:hidden}
+.swal .head{background:linear-gradient(120deg,#1565c0,#6c3fc9);color:#fff;padding:18px 26px 20px}
+.swal .head.neg{background:linear-gradient(120deg,#d68910,#e67e22)}
+.swal .head .ic{font-size:30px;line-height:1}
+.swal .head h2{color:#fff}
+.swal .head .sub{color:#e6ecff}
+.swal .bodyx{padding:16px 28px 0}
+.cards2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.cards2.one{grid-template-columns:1fr}
+.cardx{border-radius:14px;padding:9px 12px}
+.cardx .k{font-size:10.5px;font-weight:800;letter-spacing:.7px}
+.cardx .v{font-size:20px;font-weight:800;word-break:break-all;color:#1c2833}
+.cardx.ovd{background:#f1e9ff}.cardx.ovd .k{color:#6c3fc9}
+.cardx.to{background:#e8f1fc}.cardx.to .k{color:#1565c0}
+.notex{border-radius:12px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;font-weight:700;text-align:left}
+.notex.err{background:#fbe5e2;color:#c0392b}.notex.neg{background:#fff3dc;color:#8a5a00}
+.srv{color:#6b7785;font-size:12px;font-style:italic;margin-bottom:4px}
+.otprow{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:8px}
+.otprow .ring{margin:0;width:84px;height:84px}
+.otprow .ring .num{font-size:26px}
+@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.swal .close{position:absolute;top:12px;right:14px;border:0;background:none;font-size:26px;color:#6b7785;line-height:1}
+.ring{width:108px;height:108px;margin:4px auto 8px;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;align-content:center;font-weight:800;font-size:34px}
+.ring .num small{display:block;font-size:12px;font-weight:400;color:#6b7785;margin-top:-6px}
+.swal h2{margin:4px 0 2px;font-size:22px}
+.swal .sub{color:#6b7785;font-size:13px}
+.sent{background:#e8f1fc;border-radius:14px;padding:10px 14px;margin:14px 0 10px}
+.sent .k{color:#1565c0;font-size:11px;font-weight:800;letter-spacing:.8px}
+.sent .v{font-size:22px;font-weight:800;letter-spacing:.5px;word-break:break-all}
+.info{background:#f2f6fb;border-radius:14px;padding:10px 14px;text-align:left;font-size:12.5px;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}
+.info b{color:#6b7785}
+.info span{word-break:break-all}
+.hint{background:#fff6e5;border-radius:12px;padding:8px 10px 8px 14px;margin-top:10px;display:flex;align-items:center;gap:10px;color:#8a5a00;font-size:12.5px;text-align:left}
+.hint button{margin-left:auto;background:#d68910;border:0;color:#fff;border-radius:9px;padding:6px 12px;font-weight:700}
+.otpin{margin:16px auto 6px;width:240px;text-align:center;font:700 28px var(--mono);letter-spacing:6px;padding:8px 10px;border:2px solid #b8c4d3;border-radius:12px;outline:none}
+.otpin:focus{border-color:#1565c0;box-shadow:0 0 0 4px rgba(21,101,192,.15)}
+.otpin:disabled{background:#f1f3f6;color:#aab}
+.err{color:#c0392b;font-weight:700;font-size:12.5px;min-height:18px}
+.msg{color:#6b7785;font-size:13px;min-height:18px}
+.msg.exp{color:#c0392b;font-weight:600}
+.btns{display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{border:0;border-radius:11px;padding:10px 22px;font-weight:700;color:#fff;font-size:14px;transition:filter .15s,transform .05s}
+.btn:hover{filter:brightness(.92)} .btn:active{transform:translateY(1px)}
+.btn.ok{background:#1e8449} .btn.retry{background:#1565c0} .btn.resend{background:#d68910} .btn.skip{background:#95a5a6}
+.btn:disabled{opacity:.6;cursor:default}
+
+footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
+@media (max-width:1250px){.row2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(4,1fr)}.overview{grid-template-columns:1fr 1fr}.overview .modcard{grid-column:1/-1}.grid{grid-template-columns:1fr}.log{height:420px}}
+@media (max-width:680px){main{padding:14px}.kpis{grid-template-columns:repeat(2,1fr)}.overview{grid-template-columns:1fr}.topbar{padding:10px 14px;flex-wrap:wrap}.ea{grid-template-columns:1fr}.now .step{display:none}.brand small{display:none}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><div class="logo">API</div><div>API Automation Console<small>Banking API test execution · live</small></div></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="spacer"></div>
+  <button class="ctl pause" id="btnPause" title="Finish the running API, then wait (P)" style="display:none">⏸ Pause</button>
+  <button class="ghost" id="btnTv" title="TV mode - full screen (F)">⛶ TV</button>
+  <button class="ghost" id="btnTheme" title="Light / dark theme (T)">◐ Theme</button>
+  <span class="recpill" id="recPill" title="Screen recording is running"><i></i>REC <b id="recTime">00:00</b></span>
+  <span class="clock" id="clock"></span>
+  <span class="pill run" id="livePill"><span class="dot"></span><span id="liveText">LIVE</span></span>
+</header>
+
+<main>
+  <div class="banner info" id="bannerStatic"></div>
+  <div class="banner warn" id="bannerOff"></div>
+  <div class="banner otpnote" id="bannerOtp"></div>
+  <div class="banner pause" id="bannerPause">⏸ Execution is paused - the API that was running has finished; the next one starts when you press Resume.</div>
+  <div class="reportbar" id="reportBar"></div>
+
+  <section class="hero">
+    <div>
+      <h1 id="projName">Waiting for execution…</h1>
+      <div class="meta" id="projMeta"></div>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi click" style="--c:var(--blue)" data-k="ALL"><div class="l">Total</div><div class="v" id="kTotal">0</div><div class="s" id="kQueued">&nbsp;</div></div>
+    <div class="kpi click" style="--c:var(--green)" data-k="PASS"><div class="l">Passed</div><div class="v" id="kPass">0</div><div class="s" id="kPassS">&nbsp;</div></div>
+    <div class="kpi click" style="--c:var(--red)" data-k="FAIL"><div class="l">Failed</div><div class="v" id="kFail">0</div><div class="s" id="kFailS">&nbsp;</div></div>
+    <div class="kpi click" style="--c:var(--amber)" data-k="SKIP"><div class="l">Skipped</div><div class="v" id="kSkip">0</div><div class="s">no data / blocked</div></div>
+    <div class="kpi click" style="--c:var(--grey)" data-k="NA"><div class="l">Not executable</div><div class="v" id="kNa">0</div><div class="s">endpoint not usable</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="l">Pass rate</div><div class="v" id="kRate">0%</div><div class="s">of executed</div></div>
+    <div class="kpi" style="--c:var(--navy2)"><div class="l">Avg response</div><div class="v" id="kAvg">–</div><div class="s" id="kSlow">&nbsp;</div></div>
+    <div class="kpi" style="--c:var(--navy2)"><div class="l">Overall time</div><div class="v" id="kTime">0s</div><div class="s" id="kTimeS">&nbsp;</div></div>
+  </section>
+
+  <section class="overview">
+    <div class="card prog">
+      <h3>Progress</h3>
+      <div class="top"><span><b id="pDone">0</b> of <b id="pTotal">0</b> test cases done</span><span id="pPct">0%</span></div>
+      <div class="bar"><span class="p" id="bP"></span><span class="f" id="bF"></span><span class="s" id="bS"></span><span class="n" id="bN"></span><span class="r" id="bR"></span></div>
+      <div class="stats">
+        <div class="stat"><div class="k">Time left (est.)</div><div class="x" id="sEta">–</div></div>
+        <div class="stat"><div class="k">Speed</div><div class="x" id="sRate">–</div></div>
+        <div class="stat"><div class="k">Slowest API</div><div class="x" id="sSlow" style="font-size:13px">–</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Results</h3>
+      <div class="donutwrap">
+        <div class="donut"><svg width="132" height="132" viewBox="0 0 132 132" id="donut"></svg><div class="c"><div><b id="dRate">0%</b><small>pass rate</small></div></div></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="split">
+        <div class="stat"><div class="k">Positive</div><div class="x" id="sPos">–</div></div>
+        <div class="stat"><div class="k">Negative</div><div class="x" id="sNeg">–</div></div>
+      </div>
+    </div>
+    <div class="card modcard">
+      <h3>Modules <span style="text-transform:none;letter-spacing:0;font-weight:400">· click to filter</span></h3>
+      <div class="modules" id="modules"></div>
+    </div>
+  </section>
+
+  <section class="typesum" id="typeSum"></section>
+
+  <section class="now" id="now">
+    <div class="spinner" id="nowIcon"></div>
+    <div style="min-width:0">
+      <div class="t" id="nowLabel">Now executing</div>
+      <div class="h" id="nowTitle">–</div>
+      <div class="e" id="nowEp"></div>
+    </div>
+    <div class="step" id="nowStep"></div>
+  </section>
+
+  <section class="row2">
+    <div class="card">
+      <h3 class="hx">Execution map <span style="text-transform:none;letter-spacing:0;font-weight:400">· one tile per test case, click to open</span>
+        <span class="legendmini"><span><i style="background:var(--green)"></i>pass</span><span><i style="background:var(--red)"></i>fail</span><span><i style="background:var(--amber)"></i>skip</span><span><i style="background:var(--grey)"></i>not exec</span><span><i style="background:var(--blue)"></i>running</span><span>■ positive &nbsp;● negative</span></span></h3>
+      <div class="map" id="map"></div>
+    </div>
+    <div class="card">
+      <h3>Top failure reasons</h3>
+      <div class="reasons" id="reasons"></div>
+    </div>
+  </section>
+
+
+  <section class="grid">
+    <div class="panel">
+      <div class="ph">
+        <h3>Test cases</h3>
+        <button class="jump" id="btnJump" title="Scroll to the test that is running now">◎ Current</button>
+        <label class="followrun" title="Keep the running test in view"><input type="checkbox" id="followRun"> follow running</label>
+        <input class="search" id="search" placeholder="Search TC / API / endpoint / reason">
+        <div class="chips" id="types"></div>
+        <div class="chips" id="groups" title="Group the list"></div>
+        <div class="chips r" id="chips"></div>
+      </div>
+      <div class="tablewrap" id="tableWrap">
+        <table>
+          <thead><tr><th style="width:26px"></th><th>Status</th><th>TC ID</th><th>API / full URL</th><th>Method</th><th>HTTP (actual · expected)</th><th>Time</th><th>Remarks (why failed / skipped)</th><th>AI</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="emptyRows">No test cases yet.</div>
+      </div>
+    </div>
+    <div class="panel console">
+      <div class="ph">
+        <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+        <h3>Live console</h3>
+        <label class="follow"><input type="checkbox" id="follow" checked> follow</label>
+      </div>
+      <div class="ph" style="padding-top:8px;padding-bottom:8px">
+        <div class="chips" id="lvls"></div>
+        <input class="search" id="logSearch" placeholder="filter…">
+      </div>
+      <div class="log" id="log"></div>
+      <div style="padding:7px 14px;border-top:1px solid #1e2d44;color:#7f96b5;font-size:11.5px" id="aiStatus"></div>
+    </div>
+  </section>
+
+  <footer id="footer">Customer PII (Aadhaar, OTP) is masked on this screen.</footer>
+</main>
+
+<div class="recov" id="recOv" role="dialog" aria-modal="true">
+  <div class="recbox">
+    <div style="font-size:44px">🎥</div>
+    <h2>Record this test run?</h2>
+    <p>Screen recording is switched on for this runner. The tests start as soon as recording begins.</p>
+    <ol>
+      <li>Press <b>Start recording</b>.</li>
+      <li>In Chrome's picker choose the <b>Window</b> tab and select this Chrome window (or the <b>Chrome Tab</b> of this console).</li>
+      <li>Press <b>Share</b> - the REC timer starts and the tests begin.</li>
+    </ol>
+    <div class="recerr" id="recErr"></div>
+    <div class="recbtns"><button class="rbtn" id="recSkip">Run without recording</button><button class="rbtn primary" id="recGo">🎥 Start recording</button></div>
+    <small>No click within 2 minutes → the run continues without recording.</small>
+  </div>
+</div>
+<a class="shotcorner" id="shotCorner" target="_blank" rel="noopener"><img id="shotImg" alt="Final screenshot"><span>📸 Final screen after completion - click to enlarge</span><button id="shotX" title="Hide" aria-label="Hide screenshot">×</button></a>
+<div class="toast" id="toast"></div>
+<div class="shade" id="shade"></div>
+<aside class="drawer" id="drawer">
+  <div class="dh">
+    <div style="min-width:0">
+      <div id="dStatus"></div>
+      <h2 id="dTitle">–</h2>
+      <div class="mono" id="dEp" style="font-size:12px;color:var(--muted);word-break:break-all;margin-top:4px"></div>
+    </div>
+    <button class="x" id="dClose" title="Close">×</button>
+  </div>
+  <div class="db" id="dBody"></div>
+</aside>
+
+<!-- SweetAlert-style OTP modal -->
+<div class="swal-overlay" id="otpOverlay">
+  <div class="swal" role="dialog" aria-modal="true" aria-labelledby="otpTitle">
+    <div class="head" id="otpHead">
+      <div class="ic">🔐</div>
+      <h2 id="otpTitle">OTP Verification</h2>
+      <div class="sub" id="otpSub"></div>
+    </div>
+    <div class="bodyx">
+      <div class="notex err" id="otpErrBox" style="display:none"></div>
+      <div class="notex neg" id="otpNote" style="display:none"></div>
+      <div class="cards2" id="otpCards"></div>
+      <div class="srv" id="otpSrv"></div>
+      <div class="otprow">
+        <div class="ring">
+          <svg width="84" height="84" viewBox="0 0 108 108">
+            <circle cx="54" cy="54" r="46" fill="none" stroke="#e6eaf0" stroke-width="9"/>
+            <circle id="otpArc" cx="54" cy="54" r="46" fill="none" stroke="#1e8449" stroke-width="9" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0"/>
+          </svg>
+          <div class="num"><div><span id="otpSec">90</span><small id="otpSecL">sec</small></div></div>
+        </div>
+        <input class="otpin" id="otpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="30" placeholder="••••••" style="margin:0">
+      </div>
+      <div class="err" id="otpErr"></div>
+      <div class="msg" id="otpMsg"></div>
+      <div class="btns" id="otpBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Safety net: never stay silently on "Waiting for execution..." - show any page error on screen.
+window.addEventListener('error', function(e){
+  var b = document.getElementById('bannerOff');
+  if(!b) return;
+  b.className = 'banner warn show';
+  b.style.background = '#fbe3df'; b.style.color = '#c0392b'; b.style.fontWeight = '700';
+  b.textContent = 'Console page error - the live view cannot update: ' + (e.message || 'script error')
+    + (e.lineno ? ' (line ' + e.lineno + ')' : '') + '. The test run itself is not affected; the Excel / HTML report is still written.';
+});
+</script>
+<script>
+(function(){
+  const STATIC = window.__STATIC_STATE__ || null;
+  const PAGE_VERSION = '__PAGE_VERSION__';   // replaced by the server; a newer page -> reload
+  const NOOP = document.createElement('div');
+  const $ = id => document.getElementById(id) || NOOP;   // removed widgets simply do nothing
+  let state = null, selRun = null, userPickedRun = false, selTest = null, filter = 'ALL', type = 'ALL', modFilter = null, search = '';
+  let offset = 0, serverDown = false, lastRowsKey = '', logLevel = 'ALL', logSearch = '';
+  let group = 'API'; const collapsed = new Set();
+  try{ group = localStorage.getItem('apiConsoleGroup') || 'API'; }catch(e){}
+  const otp = { id:null, expireAt:0, timeout:60, expiredShown:null, busy:false, req:null };
+
+  // ───────────────────────── theme ─────────────────────────
+  function setTheme(t){ document.documentElement.setAttribute('data-theme', t); try{ localStorage.setItem('apiConsoleTheme', t); }catch(e){} }
+  try{ const t = localStorage.getItem('apiConsoleTheme'); if(t) setTheme(t); }catch(e){}
+  function themeLabel(){ $('btnTheme').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀ Light' : '◐ Dark'; }
+  $('btnTheme').onclick = () => { setTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark'); themeLabel(); };
+  themeLabel();
+
+  // ───────────────────────── helpers ─────────────────────────
+  const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const now = () => Date.now() + offset;
+  function dur(ms){ if(ms==null||ms<0||!isFinite(ms)) return '–'; const s=Math.round(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+    return h? `${h}h ${String(m).padStart(2,'0')}m` : m? `${m}m ${String(x).padStart(2,'0')}s` : `${x}s`; }
+  function ms(v){ if(v==null) return '–'; return v<1000? v+' ms' : (v/1000).toFixed(2)+' s'; }
+  function clock(t){ return t? new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '–'; }
+  // full date + time to the second, e.g. "17 Oct 2026, 08:14:32 AM" (used in the header, banner and copied summaries)
+  function stamp(t){ return t ? new Date(t).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) + ', ' + clock(t) : '–'; }
+  function stLabel(s){ return {WAITING_OTP:'WAITING OTP', NA:'NOT EXEC'}[s] || s; }
+  const done = t => ['PASS','FAIL','SKIP','NA'].includes(t.status);
+  function toast(msg, dur){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.h); toast.h=setTimeout(()=>t.classList.remove('show'), dur||2200); }
+
+  function curRun(){
+    if(!state || !state.runs || !state.runs.length) return null;
+    if(!userPickedRun || !state.runs.find(r=>r.runId===selRun)) selRun = state.currentRunId || state.runs[state.runs.length-1].runId;
+    return state.runs.find(r=>r.runId===selRun);
+  }
+
+  // ───────────────────────── polling ─────────────────────────
+  async function poll(){
+    try{
+      const r = await fetch('/api/state', {cache:'no-store'});
+      state = await r.json();
+      if(state.pageVersion && PAGE_VERSION.indexOf('__')!==0 && state.pageVersion!==PAGE_VERSION){ location.reload(); return; }
+      offset = state.serverTime - Date.now();
+      serverDown = false;
+      render();
+    }catch(e){ serverDown = true; renderConn(); }
+    setTimeout(poll, serverDown ? 3000 : 1000);
+  }
+
+  // ───────────────────────── pause / resume ─────────────────────────
+  $('btnPause').onclick = async () => {
+    const run = curRun(); if(!run) return;
+    const action = run.paused ? 'resume' : 'pause';
+    $('btnPause').disabled = true;
+    try{
+      const r = await fetch('/api/control', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action})});
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j.ok) toast(j.error || 'Could not '+action); else toast(action==='pause' ? '⏸ Pausing after the current API…' : '▶ Resumed');
+    }catch(e){ toast('Cannot reach the test run'); }
+    finally{ $('btnPause').disabled = false; }
+  };
+
+  // ───────────────────────── render ─────────────────────────
+  function counts(tests){
+    const c = {PASS:0,FAIL:0,SKIP:0,NA:0,RUN:0,QUEUED:0};
+    tests.forEach(t => { if(c[t.status]!=null) c[t.status]++; else c.RUN++; });
+    return c;
+  }
+
+  function render(){
+    renderConn();
+    const run = curRun();
+    renderTabs();
+    if(!run) return;
+
+    const tests = run.tests || [];
+    const c = counts(tests);
+    let execMs = 0, execN = 0, slow = 0, slowest = null;
+    tests.forEach(t => { if(t.timeMs!=null && (t.status==='PASS'||t.status==='FAIL')){ execMs+=t.timeMs; execN++; if(!slowest || t.timeMs>slowest.timeMs) slowest=t; } if(t.slow) slow++; });
+    const total = tests.length, doneN = c.PASS+c.FAIL+c.SKIP+c.NA, executed = c.PASS+c.FAIL;
+    const rate = executed ? (c.PASS*100/executed) : 0;
+
+    $('projName').innerHTML = esc(run.displayName || run.project) + `<span class="env">${esc(run.env||'')}</span>`;
+    $('projMeta').innerHTML = (run.testedBy ? `<span>Tested by: <b>${esc(run.testedBy)}</b></span>` : '') + `<span>Base URL: <b class="mono">${esc(run.baseUrl)}</b></span><span>Started: <b>${stamp(run.startedAt)}</b></span>`
+      + (run.finishedAt? `<span>Finished: <b>${stamp(run.finishedAt)}</b></span><span>Duration: <b>${dur(run.finishedAt - run.startedAt - (run.pausedTotalMs||0))}</b></span>` : '');
+    $('kTotal').textContent = total; $('kQueued').textContent = (total-doneN) ? (total-doneN)+' remaining' : 'all done';
+    $('kPass').textContent = c.PASS; $('kFail').textContent = c.FAIL; $('kSkip').textContent = c.SKIP; $('kNa').textContent = c.NA;
+    $('kPassS').textContent = executed ? Math.round(c.PASS*100/executed)+'% of executed' : ' ';
+    $('kFailS').textContent = executed ? Math.round(c.FAIL*100/executed)+'% of executed' : ' ';
+    $('kRate').textContent = executed ? rate.toFixed(1)+'%' : '0%';
+    $('kAvg').textContent = execN ? ms(Math.round(execMs/execN)) : '–';
+    $('kSlow').textContent = slow ? slow+' slower than SLA' : 'API time '+ms(execMs);
+    $('kTimeS').textContent = run.status==='COMPLETED' ? 'completed' : run.paused ? 'paused' : 'running…';
+    $('pDone').textContent = doneN; $('pTotal').textContent = total;
+    $('pPct').textContent = total ? Math.round(doneN*100/total)+'%' : '0%';
+    const w = n => total ? (n*100/total)+'%' : '0';
+    $('bP').style.width=w(c.PASS); $('bF').style.width=w(c.FAIL); $('bS').style.width=w(c.SKIP); $('bN').style.width=w(c.NA); $('bR').style.width=w(c.RUN);
+    $('aiStatus').textContent = run.aiStatus || '';
+
+    // ETA + speed (paused time excluded)
+    const end = run.finishedAt || (STATIC ? state.serverTime : now());
+    const active = (end - run.startedAt) - (run.pausedTotalMs||0) - (run.paused ? now()-run.pausedAt : 0);
+    // speed + time left use only tests that really ran ("not executable" ones finish instantly)
+    const ranN = c.PASS + c.FAIL + c.SKIP;
+    const perTest = ranN ? active/ranN : null;
+    $('sEta').innerHTML = (run.status==='COMPLETED' || STATIC) ? '<span style="color:var(--green);font-weight:500">✔ Completed</span>' : perTest ? dur(perTest*(total-doneN)) : '–';
+    $('sRate').textContent = perTest && active>3000 ? (ranN/(active/60000)).toFixed(0)+' tests/min' : '–';
+    $('sSlow').innerHTML = slowest ? `<b>${ms(slowest.timeMs)}</b> <span style="color:var(--muted);font-weight:400">${esc(slowest.tcId)}</span>` : '–';
+
+    try{ renderDonut(c, rate, executed); }catch(e){ console.error("renderDonut", e); }
+    try{ renderSplit(tests); }catch(e){ console.error("renderSplit", e); }
+    try{ renderTypeSum(tests); }catch(e){ console.error("renderTypeSum", e); }
+    try{ renderModules(tests); }catch(e){ console.error("renderModules", e); }
+    try{ renderMap(tests); }catch(e){ console.error("renderMap", e); }
+    try{ renderReasons(tests); }catch(e){ console.error("renderReasons", e); }
+    failToast(tests);
+    renderNow(run);
+    renderReportBar(run);
+    renderRecording(run);
+    renderChips(tests, c);
+    renderRows(tests);
+    followRunning(run);
+    renderLog(run);
+    if(selTest) renderDrawer(run.tests.find(t=>t.id===selTest));
+    renderOtp();
+
+    const f = [];
+    // a saved report that is shared shows file names only (no machine paths)
+    if(run.excelReport) f.push('Excel: <span class="mono">'+esc(STATIC ? baseName(run.excelReport) : run.excelReport)+'</span>');
+    if(run.htmlReport)  f.push('HTML: <span class="mono">'+esc(STATIC ? baseName(run.htmlReport) : run.htmlReport)+'</span>');
+    if(!STATIC && run.htmlReport){ const d=(run.htmlReport||'').split(/[\\/]/).slice(0,-1).join('\\'); f.push('Folder: <span class="mono">'+esc(d)+'</span>');
+      if(run.recFile) f.push('Recording: <span class="mono">'+esc(d+'\\'+run.recFile.replace(/\//g,'\\'))+'</span>');
+      if(run.recShot) f.push('Screenshot: <span class="mono">'+esc(d+'\\'+run.recShot.replace(/\//g,'\\'))+'</span>'); }
+    $('footer').innerHTML = (f.length ? f.join('<br>') + '<br>' : '') + 'Customer PII (Aadhaar, OTP) is masked on this screen.';
+    tickTime();
+  }
+
+  function renderDonut(c, rate, executed){
+    const segs = [[c.PASS,'var(--green)','Passed'],[c.FAIL,'var(--red)','Failed'],[c.SKIP,'var(--amber)','Skipped'],[c.NA,'var(--grey)','Not executable'],[c.RUN+c.QUEUED,'var(--grey-lt)','Pending']];
+    const sum = segs.reduce((a,s)=>a+s[0],0) || 1, R=54, L=2*Math.PI*R;
+    let off = 0, svg = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--grey-lt)" stroke-width="16"/>`;
+    segs.forEach(([n,col]) => { if(!n) return; const len=n/sum*L; svg += `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${col}" stroke-width="16" stroke-dasharray="${len} ${L-len}" stroke-dashoffset="${-off}"/>`; off+=len; });
+    $('donut').innerHTML = svg;
+    $('dRate').textContent = executed ? rate.toFixed(0)+'%' : '–';
+    $('legend').innerHTML = segs.map(([n,col,l]) => `<div><i style="background:${col}"></i>${l}<span>${n}</span></div>`).join('');
+  }
+
+  function renderSplit(tests){
+    const part = arr => { const k=counts(arr); return arr.length ? `${k.PASS} <small>pass</small> · ${k.FAIL} <small>fail</small>${k.SKIP?' · '+k.SKIP+' <small>skip</small>':''}` : '–'; };
+    $('sPos').innerHTML = part(tests.filter(t=>!t.negative));
+    $('sNeg').innerHTML = part(tests.filter(t=>t.negative));
+  }
+
+  // one result per API: PASS only if its positive test AND all its negative tests pass
+  const baseId = t => t.tcId.replace(/_(\d+|NA|RL)$/, '');
+  function apiRoll(arr){
+    const pos = arr.filter(t=>!t.negative), neg = arr.filter(t=>t.negative);
+    const cp = counts(pos), cn = counts(neg);
+    let res;
+    if(cp.FAIL || cn.FAIL) res = 'FAIL';
+    else if(arr.some(t=>!done(t))) res = 'RUNNING';
+    else if(cp.PASS || (!pos.length && cn.PASS)) res = 'PASS';
+    else if(cp.SKIP) res = 'SKIP';
+    else res = 'NA';
+    return {res, cp, cn, negRan: cn.PASS + cn.FAIL};
+  }
+  function apiGroups(tests){
+    const by = new Map();
+    tests.forEach(t => { const k = baseId(t); if(!by.has(k)) by.set(k, []); by.get(k).push(t); });
+    let n = 0; const out = new Map();
+    by.forEach((arr, k) => out.set(k, Object.assign({no: ++n, arr}, apiRoll(arr))));
+    return out;
+  }
+  const apiLabel = n => 'API' + String(n).padStart(3, '0');
+
+  // summaries: APIs (positive + all negatives), valid positive tests, negative / security tests
+  function renderTypeSum(tests){
+    const ag = [...apiGroups(tests).values()];
+    const ac = {PASS:0, FAIL:0, SKIP:0, NA:0, RUN:0};
+    ag.forEach(g => { if(g.res==='PASS') ac.PASS++; else if(g.res==='FAIL') ac.FAIL++; else if(g.res==='SKIP') ac.SKIP++; else if(g.res==='NA') ac.NA++; else ac.RUN++; });
+    const defs = [
+      ['API', 'var(--blue)', '▣ APIs - one result per API', 'An API passes only if its positive test AND every negative test pass.', ag, ac, ag.length],
+      ['POS', 'var(--green)', '✔ Positive - valid endpoints with valid data', 'A valid request must succeed. Passed = the API answered correctly.', tests.filter(t=>!t.negative)],
+      ['NEG', 'var(--purple,#6c3483)', '✖ Negative and security checks', 'Invalid input must be rejected. Passed = the API refused it. Failed = the API accepted it.', tests.filter(t=>t.negative)]
+    ];
+    $('typeSum').innerHTML = defs.map(([k, col, title, desc, arr, pre, preN]) => {
+      const c = pre || counts(arr), ex = c.PASS + c.FAIL, n = (preN != null ? preN : arr.length) || 1, tot = preN != null ? preN : arr.length;
+      const finished = c.NA + c.PASS + c.FAIL + c.SKIP, left = arr.length - finished;
+      const state = !arr.length ? '<span class="tstate pend">no tests</span>'
+        : left === 0 ? '<span class="tstate done" title="Every test of this group has finished">✔ Completed</span>'
+        : (c.RUN || finished) ? '<span class="tstate run" title="Still executing"><i></i>Running ' + finished + ' / ' + arr.length + '</span>'
+        : '<span class="tstate pend">Waiting to start</span>';
+      const seg = (v, col2) => `<i style="width:${v*100/n}%;background:${col2}"></i>`;
+      return `<div class="tcard${arr.length && left === 0 ? ' finished' : ''}" style="--c:${col}" data-t="${k}" title="Click to show only these tests">
+        <h3>${title} ${state}</h3><div class="d">${desc}</div>
+        <div class="nums"><div><b>${tot}</b><span>Total</span></div><div><b style="color:var(--green)">${c.PASS}</b><span>Passed</span></div>
+        <div><b style="color:var(--red)">${c.FAIL}</b><span>Failed</span></div><div><b style="color:var(--amber)">${c.SKIP}</b><span>Skipped</span></div>
+        <div><b style="color:var(--grey)">${c.NA}</b><span>Not exec</span></div><div><b>${ex ? (c.PASS*100/ex).toFixed(1)+'%' : '–'}</b><span>Pass rate</span></div></div>
+        <div class="tb">${seg(c.PASS,'var(--green)')}${seg(c.FAIL,'var(--red)')}${seg(c.SKIP,'var(--amber)')}${seg(c.NA,'var(--grey)')}</div></div>`;
+    }).join('');
+  }
+  $('typeSum').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if(!b) return; if(b.dataset.t==='API'){ group='API'; type='ALL'; } else type = b.dataset.t; filter = 'ALL'; lastRowsKey=''; render(); $('tableWrap').scrollIntoView({behavior:'smooth',block:'start'}); });
+
+  let lastModKey = '';
+  function renderModules(tests){
+    const by = {};
+    tests.forEach(t => { const m = t.module || '(no module)'; (by[m] = by[m] || []).push(t); });
+    const key = JSON.stringify(Object.entries(by).map(([m,a]) => [m, counts(a)])) + modFilter;
+    if(key===lastModKey) return; lastModKey = key;
+    $('modules').innerHTML = Object.entries(by).map(([m,a]) => {
+      const k = counts(a), n = a.length, w = x => (x*100/n)+'%', d = k.PASS+k.FAIL+k.SKIP+k.NA;
+      return `<div class="mod ${modFilter===m?'on':''}" data-m="${esc(m)}" title="${esc(m)}: ${k.PASS} pass, ${k.FAIL} fail, ${k.SKIP} skip, ${k.NA} not executable">
+        <div><div class="nm">${esc(m)}</div><div class="bar"><span class="p" style="width:${w(k.PASS)}"></span><span class="f" style="width:${w(k.FAIL)}"></span><span class="s" style="width:${w(k.SKIP)}"></span><span class="n" style="width:${w(k.NA)}"></span></div></div>
+        <div class="ct">${d}/${n} · <b style="color:var(--green)">${k.PASS}</b>/<b style="color:var(--red)">${k.FAIL}</b></div></div>`;
+    }).join('') || '<div class="empty" style="padding:10px">–</div>';
+  }
+  $('modules').addEventListener('click', e => { const d=e.target.closest('[data-m]'); if(!d) return; modFilter = modFilter===d.dataset.m ? null : d.dataset.m; lastRowsKey=''; lastModKey=''; render(); });
+
+  // ───────────────────────── execution map ─────────────────────────
+  let lastMapKey = '';
+  function renderMap(tests){
+    const key = tests.map(t=>t.id+t.status).join('|') + modFilter;
+    if(key===lastMapKey) return; lastMapKey = key;
+    const by = {}; const order = [];
+    tests.forEach(t => { const m = t.module || '(no module)'; if(!by[m]){ by[m]=[]; order.push(m); } by[m].push(t); });
+    $('map').innerHTML = order.map(m => {
+      const a = by[m], k = counts(a);
+      return `<div class="maprow"><div class="ml" data-m="${esc(m)}" title="${esc(m)}"><b>${esc(m)}</b> · ${k.PASS}/${a.length}</div><div class="tiles">`
+        + a.map(t => `<span class="tile ${esc(t.status)} ${t.negative?'neg':''}" data-id="${esc(t.id)}" title="${esc(t.tcId)} · ${esc(stLabel(t.status))} · ${esc(t.apiName)}${t.httpStatus?' · HTTP '+t.httpStatus:''}${t.category?' · '+esc(t.category):''}"></span>`).join('')
+        + `</div></div>`;
+    }).join('') || '<div class="empty" style="padding:10px">–</div>';
+  }
+  $('map').addEventListener('click', e => {
+    const tile = e.target.closest('[data-id]'); if(tile){ selTest = tile.dataset.id; openDrawer(); return; }
+    const ml = e.target.closest('[data-m]'); if(ml){ modFilter = modFilter===ml.dataset.m ? null : ml.dataset.m; lastRowsKey=''; lastModKey=''; lastMapKey=''; render(); }
+  });
+
+  // ───────────────────────── top failure reasons ─────────────────────────
+  let lastReasonKey = '';
+  function renderReasons(tests){
+    const by = {};
+    tests.filter(t => t.status==='FAIL').forEach(t => { const c = t.category || 'Other'; by[c] = (by[c]||0) + 1; });
+    const list = Object.entries(by).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    const key = JSON.stringify(list); if(key===lastReasonKey) return; lastReasonKey = key;
+    const max = list.length ? list[0][1] : 1;
+    $('reasons').innerHTML = list.map(([c,n]) => `<div class="rsn" data-c="${esc(c)}" title="Show these failures"><div class="top"><span>${esc(c)}</span><b>${n}</b></div><div class="bar"><span style="width:${n*100/max}%"></span></div></div>`).join('')
+      || '<div class="empty" style="padding:18px">No failures so far 🎉</div>';
+  }
+  $('reasons').addEventListener('click', e => { const r=e.target.closest('[data-c]'); if(!r) return; filter='FAIL'; $('search').value = r.dataset.c==='Other' ? '' : r.dataset.c; search=$('search').value.toLowerCase(); lastRowsKey=''; render(); $('tableWrap').scrollIntoView({behavior:'smooth',block:'start'}); });
+
+  // ───────────────────────── response-time chart ─────────────────────────
+  let lastChartKey = '';
+  function renderChart(tests){
+    const pts = tests.filter(t => t.timeMs!=null && t.finishedAt && (t.status==='PASS'||t.status==='FAIL')).sort((a,b)=>a.finishedAt-b.finishedAt).slice(-150);
+    const key = pts.length + ':' + (pts.length ? pts[pts.length-1].id : ''); if(key===lastChartKey) return; lastChartKey = key;
+    const W=1000, H=140, top=18, bot=18;
+    if(!pts.length){ $('chart').innerHTML = `<text x="500" y="75" text-anchor="middle">Waiting for responses…</text>`; $('chartInfo').textContent=''; return; }
+    const sorted = pts.map(p=>p.timeMs).sort((a,b)=>a-b);
+    const p95 = sorted[Math.floor(sorted.length*.95)] || sorted[sorted.length-1];
+    const max = Math.max(500, p95*1.25);
+    const bw = W/150, y = v => H-bot - Math.min(1, v/max)*(H-bot-top);
+    let svg = '';
+    [0, .5, 1].forEach(f => { const v = max*f, yy = y(v); svg += `<line class="grid" x1="0" x2="${W}" y1="${yy}" y2="${yy}"/><text x="4" y="${yy-3}">${v>=1000?(v/1000).toFixed(1)+' s':Math.round(v)+' ms'}</text>`; });
+    pts.forEach((p,i) => {
+      const x = W - (pts.length-i)*bw, yy = y(p.timeMs), col = p.status==='FAIL' ? 'var(--red)' : p.slow ? 'var(--amber)' : 'var(--green)';
+      svg += `<rect data-id="${esc(p.id)}" x="${x+1}" y="${yy}" width="${Math.max(1,bw-2)}" height="${H-bot-yy}" fill="${col}" rx="1.5" style="cursor:pointer"><title>${esc(p.tcId)} · ${ms(p.timeMs)} · HTTP ${p.httpStatus??'–'}</title></rect>`;
+    });
+    $('chart').innerHTML = svg;
+    const avg = Math.round(pts.reduce((a,p)=>a+p.timeMs,0)/pts.length);
+    $('chartInfo').innerHTML = `<span>avg <b>${ms(avg)}</b></span><span>p95 <b>${ms(p95)}</b></span><span>max <b>${ms(sorted[sorted.length-1])}</b></span><span><i style="background:var(--green)"></i>pass</span><span><i style="background:var(--amber)"></i>slow</span><span><i style="background:var(--red)"></i>fail</span>`;
+  }
+  $('chart').addEventListener('click', e => { const r=e.target.closest('[data-id]'); if(!r) return; selTest=r.dataset.id; openDrawer(); });
+
+  // ───────────────────────── new-failure toast ─────────────────────────
+  let seenFail = null;
+  function failToast(tests){
+    const fails = tests.filter(t=>t.status==='FAIL');
+    if(seenFail===null || STATIC){ seenFail = fails.length; return; }
+    if(fails.length > seenFail){ const last = fails[fails.length-1]; toast(`✖ ${fails.length-seenFail} new failure${fails.length-seenFail>1?'s':''} · ${last.tcId} ${last.category?'· '+last.category:''}`); }
+    seenFail = fails.length;
+  }
+
+  function renderConn(){
+    const pill = $('livePill'), run = curRun();
+    $('btnPause').style.display = (!STATIC && !serverDown && run && run.status==='RUNNING') ? '' : 'none';
+    if(run){ $('btnPause').className = 'ctl ' + (run.paused ? 'resume' : 'pause'); $('btnPause').textContent = run.paused ? '▶ Resume' : '⏸ Pause'; }
+    $('bannerPause').classList.toggle('show', !!(run && run.paused && !STATIC && !serverDown));
+    if(STATIC){ pill.className='pill done'; $('liveText').textContent='SAVED REPORT';
+      const b=$('bannerStatic'); b.classList.add('show');
+      const sr = (STATIC.runs && STATIC.runs[0]) || null;
+      b.innerHTML = '📄 <b>Saved report</b>' + (sr ? ' · ' + esc(sr.displayName || sr.project) + (sr.env ? ' (' + esc(sr.env) + ')' : '') + ' · run <b>' + esc(stamp(sr.startedAt)) + ' → ' + esc(stamp(sr.finishedAt)) + '</b>' : '')
+        + ' · generated ' + esc(stamp(STATIC.serverTime)) + ' · click ▸ on any test (or the row) to see its request and response';
+      if(sr){ const cc = counts(sr.tests || []), ex = cc.PASS + cc.FAIL;
+        document.title = (sr.project || 'API') + ' report · ' + stamp(sr.startedAt) + ' · ' + (ex ? (cc.PASS*100/ex).toFixed(1) + '% pass' : 'no results'); }
+      return; }
+    if(serverDown){ pill.className='pill off'; $('liveText').textContent='OFFLINE';
+      renderReportBar(run);   // offline variant: file paths with Copy buttons (links to the live server would be dead)
+      const b=$('bannerOff'); b.classList.add('show');
+      b.innerHTML='The test run has ended and the live server is closed - this page shows the final state.'
+        + (run && run.htmlReport ? ' Your report is saved: <b>' + esc(baseName(run.htmlReport)) + '</b>'
+          + ' <button class="copybtn" data-copyp="' + esc(run.htmlReport) + '">Copy path</button>'
+          + ' <button class="copybtn" data-copyp="' + esc(hubPath(run)) + '">Copy "All reports" path</button>'
+          + ' - paste it in the browser address bar (or open the reports folder).' : '');
+    } else {
+      $('bannerOff').classList.remove('show');
+      const running = run && run.status==='RUNNING';
+      pill.className = !running ? 'pill done' : run.paused ? 'pill pause' : 'pill run';
+      $('liveText').textContent = !running ? 'COMPLETED' : run.paused ? 'PAUSED' : 'LIVE';
+    }
+  }
+
+  function renderTabs(){
+    const runs = (state && state.runs) || [];
+    $('tabs').innerHTML = runs.length>1 ? runs.map(r => `<button class="tab ${r.runId===selRun?'active':''}" data-run="${esc(r.runId)}">${esc(r.project)}${r.status==='RUNNING'?' ●':''}</button>`).join('') : '';
+  }
+  $('tabs').addEventListener('click', e => { const b=e.target.closest('[data-run]'); if(!b) return; selRun=b.dataset.run; userPickedRun=true; lastRowsKey=''; lastModKey=''; render(); });
+
+  function renderNow(run){
+    const box = $('now'); const t = run.currentTestId ? run.tests.find(x=>x.id===run.currentTestId) : null;
+    if(run.status==='COMPLETED' || STATIC){
+      box.className='now done'; $('nowIcon').textContent='✓'; $('nowLabel').textContent='Execution completed';
+      $('nowTitle').textContent = run.displayName || run.project; $('nowEp').textContent = 'Overall time taken: ' + dur((run.finishedAt||now()) - run.startedAt); $('nowStep').textContent=''; return;
+    }
+    if(run.paused){
+      box.className='now paused'; $('nowIcon').textContent='II'; $('nowLabel').textContent='Paused by tester';
+      $('nowTitle').textContent = t ? 'Last API: ' + t.tcId + ' · ' + t.apiName : 'Paused';
+      $('nowEp').textContent = 'Paused for ' + dur(now() - run.pausedAt) + ' - press Resume to continue';
+      $('nowStep').textContent=''; return;
+    }
+    $('nowIcon').textContent='';
+    if(!t){ box.className='now'; $('nowLabel').textContent='Preparing'; $('nowTitle').textContent='Reading test data…'; $('nowEp').textContent=''; $('nowStep').textContent=''; return; }
+    const waiting = t.status==='WAITING_OTP' || (state.otp);
+    box.className = 'now' + (waiting ? ' otp' : '');
+    $('nowLabel').textContent = waiting ? 'Waiting for OTP' : 'Now executing';
+    $('nowTitle').innerHTML = `<span class="method m-${esc(t.method)}">${esc(t.method)}</span> &nbsp;${esc(t.tcId)} · ${esc(t.apiName)} ${t.negative?'<span class="tag neg">NEGATIVE</span>':''}`;
+    $('nowEp').textContent = t.endpoint;
+    $('nowStep').innerHTML = t.step ? `<b>${esc(t.step)}</b>${t.startedAt ? 'for '+dur(now()-t.startedAt) : ''}` : '';
+  }
+
+  function renderChips(tests, c){
+    const pend = tests.length-c.PASS-c.FAIL-c.SKIP-c.NA;
+    const defs = [['ALL','All',tests.length],['PASS','Passed',c.PASS],['FAIL','Failed',c.FAIL],['SKIP','Skipped',c.SKIP],['NA','Not exec',c.NA],['OPEN','Pending',pend]];
+    $('chips').innerHTML = defs.map(([k,l,n]) => `<button class="chip ${filter===k?'on':''}" data-f="${k}">${l} ${n}</button>`).join('');
+    const gdefs = [['FLAT','List'],['MODULE','By module'],['API','By API (scenario)']];
+    $('groups').innerHTML = '<span style="color:var(--muted);font-size:12px;align-self:center">Group:</span>' + gdefs.map(([k,l]) => `<button class="chip ${group===k?'on':''}" data-g="${k}">${l}</button>`).join('');
+    const tdefs = [['ALL','Pos + Neg'],['POS','Positive'],['NEG','Negative']];
+    $('types').innerHTML = tdefs.map(([k,l]) => `<button class="chip ${type===k?'on':''}" data-t="${k}">${l}</button>`).join('');
+  }
+  $('chips').addEventListener('click', e => { const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; lastRowsKey=''; render(); });
+  $('groups').addEventListener('click', e => { const b=e.target.closest('[data-g]'); if(!b) return; group=b.dataset.g; try{ localStorage.setItem('apiConsoleGroup', group); }catch(x){} lastRowsKey=''; render(); });
+  $('types').addEventListener('click', e => { const b=e.target.closest('[data-t]'); if(!b) return; type=b.dataset.t; lastRowsKey=''; render(); });
+  document.querySelectorAll('.kpi.click').forEach(k => k.addEventListener('click', () => { filter=k.dataset.k; lastRowsKey=''; render(); $('tableWrap').scrollIntoView({behavior:'smooth',block:'start'}); }));
+  $('search').addEventListener('input', e => { search=e.target.value.toLowerCase(); lastRowsKey=''; render(); });
+
+  const expanded = new Set();
+  function rowDetail(t){
+    const http = t.httpStatus!=null ? `${t.httpStatus} ${t.httpCheck==='OK'?'✓ standard code':t.httpCheck==='MISMATCH'?'⚠ not the standard code':''}` : 'not called';
+    const why = t.remark || t.reason || '';
+    return `<tr class="xrow"><td colspan="9"><div class="xgrid">
+      <span class="k">Status</span><span class="v"><span class="status st-${esc(t.status)}">${esc(stLabel(t.status))}</span>${t.category ? ' &nbsp;<b>'+esc(t.category)+'</b>' : ''}${t.step && !done(t) ? ' &nbsp;· '+esc(t.step) : ''}</span>
+      <span class="k">Expected</span><span class="v">${esc(t.expected||'–')}</span>
+      <span class="k">Actual</span><span class="v">${esc(t.actual||(done(t)?'–':'Executing…'))}</span>
+      <span class="k">HTTP</span><span class="v">actual <b>${esc(http)}</b>${t.expectedHttp ? ' &nbsp;·&nbsp; expected <b>'+esc(t.expectedHttp)+'</b>' : ''}</span>
+      ${why ? `<span class="k">Why</span><span class="v">${esc(why)}</span>` : ''}
+      ${t.action ? `<span class="k">Fix needed</span><span class="v">${esc(t.action)}</span>` : ''}
+      ${t.testData ? `<span class="k">Test data</span><span class="v mono">${esc(t.testData)}</span>` : ''}
+      <span class="k">URL</span><span class="v mono">${esc(t.endpoint||'–')}</span>
+      ${t.format ? `<span class="k">Format</span><span class="v">${esc(t.format)}</span>` : ''}
+      ${t.dataSource ? `<span class="k">Data source</span><span class="v mono" style="white-space:pre-wrap">${esc(t.dataSource)}</span>` : ''}
+      ${t.vapt ? `<span class="k">VAPT ref</span><span class="v">${esc(t.vapt)}</span>` : ''}
+      <span class="k">Time</span><span class="v">${ms(t.timeMs)}${t.encrypted ? ' &nbsp;· 🔒 encrypted request / response' : ''}</span>
+      ${t.executedAt ? `<span class="k">Executed at</span><span class="v">${esc(t.executedAt)}</span>` : ''}
+    </div><div class="xmore"><a data-open="${esc(t.id)}">Open full request / response (decrypted + encrypted) ›</a></div></td></tr>`;
+  }
+
+  function renderRows(tests){
+    const list = tests.filter(t => (filter==='ALL' || (filter==='OPEN' ? !done(t) : t.status===filter))
+      && (type==='ALL' || (type==='NEG') === !!t.negative)
+      && (!modFilter || (t.module||'(no module)')===modFilter)
+      && (!search || (t.tcId+' '+t.apiName+' '+t.endpoint+' '+(t.remark||t.reason||'')+' '+(t.category||'')).toLowerCase().includes(search)));
+    const key = JSON.stringify(list.map(t=>[t.id,t.status,t.httpStatus,t.timeMs,t.aiVerdict,t.slow,t.category,t.endpoint,t.httpCheck,expanded.has(t.id),expanded.has(t.id)?t.step:0,group,[...collapsed].join(',')]));
+    if(key===lastRowsKey) return; lastRowsKey = key;
+    $('emptyRows').style.display = list.length ? 'none' : 'block';
+    const rowHtml = t => {
+      const cls = t.status==='RUNNING' ? 'running' : t.status==='WAITING_OTP' ? 'waiting' : '';
+      const ai = t.aiVerdict ? `<span class="ai ${t.aiVerdict==='N/A'?'NA':esc(t.aiVerdict)}" title="${esc(t.aiReason)}">${esc(t.aiVerdict)}</span>` : '<span class="ai NA">–</span>';
+      const why = t.status==='PASS' || !done(t) ? '' : (t.remark || t.reason || '');
+      const remark = why ? `<div class="cat ${esc(t.status)}">${esc(t.category || stLabel(t.status))}</div><div class="why" title="${esc(why)}">${esc(why)}</div>` : '<span style="color:var(--muted)">–</span>';
+      const open = expanded.has(t.id);
+      return `<tr class="row ${cls} ${open?'open':''}" data-id="${esc(t.id)}">
+        <td><button class="xp" data-x="${esc(t.id)}" title="Show / hide details" aria-label="Show or hide details">${open?'▾':'▸'}</button></td>
+        <td><span class="status st-${esc(t.status)}">${esc(stLabel(t.status))}</span></td>
+        <td class="num"><b>${esc(t.tcId)}</b><br>${t.negative?'<span class="tag neg">NEG</span>':'<span class="tag pos">POS</span>'}${t.slow?'<span class="tag slow">SLOW</span>':''}</td>
+        <td class="api"><div class="n" title="${esc(t.apiName)}">${esc(t.apiName)}</div><div class="ep" title="${esc(t.endpoint)}">${esc(t.endpoint)}</div></td>
+        <td><span class="method m-${esc(t.method)}">${esc(t.method)}</span></td>
+        <td class="http ${t.httpCheck==='OK'?'ok':t.httpCheck==='MISMATCH'?'mm':''}" title="${t.httpCheck==='MISMATCH'?'Rejected, but not with the standard code':''}"><b>${t.httpStatus??'–'}${t.httpCheck==='MISMATCH'?' ⚠':t.httpCheck==='OK'?' ✓':''}</b>${t.expectedHttp?'<small>exp '+esc(t.expectedHttp)+'</small>':''}</td>
+        <td class="num">${ms(t.timeMs)}</td>
+        <td class="remark">${remark}</td>
+        <td>${ai}</td></tr>` + (open ? rowDetail(t) : '');
+    };
+    let html = '';
+    if(group === 'FLAT'){ html = list.map(rowHtml).join(''); }
+    else {
+      const groups = new Map();
+      const roll = group==='API' ? apiGroups(tests) : null;
+      list.forEach(t => { const k = group==='MODULE' ? (t.module||'(no module)') : t.tcId.replace(/_(\d+|NA|RL)$/,''); if(!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
+      groups.forEach((arr, k) => {
+        const c = counts(arr), id = group + '|' + k;
+        const rl = roll ? roll.get(k) : null;
+        const title = group==='MODULE' ? k : (rl ? apiLabel(rl.no) + ' · ' : '') + k + ' · ' + (arr.find(x => !x.negative) || arr[0]).apiName.replace(/ \| .*$/,'').replace(/^\d+ [^>]*> /,'');
+        const chip = rl ? `<span class="status st-${rl.res==='RUNNING'?'RUNNING':rl.res}" style="margin-left:10px">API ${rl.res==='NA'?'NOT EXEC':rl.res}</span><span class="gcnt" style="margin-left:6px">positive ${rl.cp.PASS?'✔':rl.cp.FAIL?'✖':'–'} · negatives ${rl.cn.PASS} of ${rl.negRan + rl.cn.SKIP} passed${rl.cn.NA?' · '+rl.cn.NA+' not exec':''}</span>` : '';
+        const isC = collapsed.has(id);
+        html += `<tr class="grp" data-grp="${esc(id)}"><td colspan="9"><span class="gcar">${isC?'▸':'▾'}</span> <b>${esc(title)}</b>${chip}<span class="gcnt">${arr.length} tests · <i class="ok">${c.PASS} pass</i> · <i class="ko">${c.FAIL} fail</i>${c.SKIP?' · '+c.SKIP+' skip':''}${c.NA?' · '+c.NA+' not exec':''}</span></td></tr>`;
+        if(!isC) html += arr.map(rowHtml).join('');
+      });
+    }
+    $('rows').innerHTML = html;
+  }
+  $('rows').addEventListener('click', e => {
+    const g = e.target.closest('tr.grp');
+    if(g){ const k = g.dataset.grp; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); lastRowsKey=''; render(); return; }
+    const x = e.target.closest('[data-x]');
+    if(x){ const id = x.dataset.x; expanded.has(id) ? expanded.delete(id) : expanded.add(id); lastRowsKey=''; render(); return; }
+    const o = e.target.closest('[data-open]');
+    if(o){ selTest = o.dataset.open; openDrawer(); return; }
+    if(e.target.closest('tr.xrow')) return;
+    const tr = e.target.closest('tr[data-id]'); if(!tr) return; selTest = tr.dataset.id; openDrawer();
+  });
+
+  // ───────────────────────── jump to / follow the running test ─────────────────────────
+  function runningRow(id){ return document.querySelector('tr.row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
+  function scrollToRow(tr, flash){
+    const w = $('tableWrap');
+    w.scrollTop += tr.getBoundingClientRect().top - w.getBoundingClientRect().top - w.clientHeight / 3;
+    if(flash){ tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash'); }
+  }
+  function jumpToRunning(){
+    const run = curRun();
+    if(!run || !run.currentTestId || run.status !== 'RUNNING'){ toast('Nothing is running right now'); return; }
+    let tr = runningRow(run.currentTestId);
+    if(!tr){   // hidden by a filter -> show everything
+      filter = 'ALL'; type = 'ALL'; modFilter = null; search = ''; $('search').value = '';
+      lastRowsKey = ''; lastModKey = ''; render();
+      tr = runningRow(run.currentTestId);
+    }
+    if(!tr){ toast('Running test not found in the list'); return; }
+    $('tableWrap').scrollIntoView({behavior:'smooth', block:'start'});
+    scrollToRow(tr, true);
+  }
+  $('btnJump').onclick = jumpToRunning;
+  $('now').addEventListener('click', jumpToRunning);
+  let lastFollowed = null;
+  function followRunning(run){
+    if(!$('followRun').checked || !run || !run.currentTestId || run.currentTestId === lastFollowed) return;
+    const tr = runningRow(run.currentTestId);
+    if(tr){ lastFollowed = run.currentTestId; scrollToRow(tr, false); }
+  }
+  try{ $('followRun').checked = localStorage.getItem('apiConsoleFollowRun') === '1'; }catch(e){}
+  $('followRun').addEventListener('change', e => { try{ localStorage.setItem('apiConsoleFollowRun', e.target.checked ? '1' : '0'); }catch(x){} lastFollowed = null; });
+
+  // ───────────────────────── live console ─────────────────────────
+  const LV = [['ALL','All'],['PASS','Pass'],['FAIL','Fail'],['WARN','Warn'],['STEP','Steps']];
+  function renderLvls(){ $('lvls').innerHTML = LV.map(([k,l]) => `<button class="chip ${logLevel===k?'on':''}" data-l="${k}">${l}</button>`).join(''); }
+  renderLvls();
+  $('lvls').addEventListener('click', e => { const b=e.target.closest('[data-l]'); if(!b) return; logLevel=b.dataset.l; renderLvls(); lastLogKey=''; const r=curRun(); if(r) renderLog(r); });
+  $('logSearch').addEventListener('input', e => { logSearch=e.target.value.toLowerCase(); lastLogKey=''; const r=curRun(); if(r) renderLog(r); });
+  $('log').addEventListener('click', e => { const s=e.target.closest('[data-tc]'); if(!s) return; const run=curRun(); const t=run && run.tests.find(x=>x.tcId===s.dataset.tc); if(t){ selTest=t.id; openDrawer(); } });
+
+  let lastLogKey='';
+  function renderLog(run){
+    const all = run.events||[];
+    const key = all.length + ':' + (all.length ? all[all.length-1].time : 0) + logLevel + logSearch;
+    if(key===lastLogKey) return; lastLogKey=key;
+    const ev = all.filter(e => (logLevel==='ALL' || e.level===logLevel) && (!logSearch || ((e.tc||'')+' '+e.text).toLowerCase().includes(logSearch))).slice(-400);
+    const box = $('log');
+    box.innerHTML = ev.map(e => `<div class="ev ${esc(e.level)}"><span class="tm">${clock(e.time)}</span><span class="tc" data-tc="${esc(e.tc||'')}">${esc(e.tc||'')}</span><span class="tx"><span class="lvl">${esc(e.level)}</span>${esc(e.text)}</span></div>`).join('') || '<div class="empty">Waiting for activity…</div>';
+    if($('follow').checked) box.scrollTop = box.scrollHeight;
+  }
+
+  // ───────────────────────── drawer ─────────────────────────
+  function openDrawer(){ $('drawer').classList.add('open'); $('shade').classList.add('open'); lastDrawerKey=''; const run=curRun(); if(run) renderDrawer(run.tests.find(t=>t.id===selTest)); }
+  function closeDrawer(){ selTest=null; $('drawer').classList.remove('open'); $('shade').classList.remove('open'); }
+  $('dClose').onclick = closeDrawer; $('shade').onclick = closeDrawer;
+  $('dBody').addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if(!b) return;
+    navigator.clipboard.writeText(b.dataset.copy).then(() => toast('Copied: ' + b.dataset.copy.slice(0, 60)), () => toast('Copy not allowed by the browser')); });
+  document.addEventListener('keydown', e => { if(e.key==='Escape' && !$('otpOverlay').classList.contains('show')) closeDrawer(); });
+
+  let lastDrawerKey='';
+  function renderDrawer(t){
+    if(!t) return;
+    const key = t.id+t.status+(t.aiVerdict||'')+(t.step||'')+(t.category||'');
+    if(key===lastDrawerKey && $('drawer').classList.contains('open')) return; lastDrawerKey=key;
+    $('dStatus').innerHTML = `<span class="status st-${esc(t.status)}">${esc(stLabel(t.status))}</span> <span class="method m-${esc(t.method)}">${esc(t.method)}</span> `
+      + (t.negative?'<span class="tag neg">NEGATIVE</span>':'<span class="tag pos">POSITIVE</span>') + (t.slow?'<span class="tag slow">SLOW</span>':'')
+      + (t.module ? ` <span style="color:var(--muted);font-size:12px">· ${esc(t.module)}</span>` : '');
+    $('dTitle').textContent = t.tcId + ' · ' + t.apiName;
+    $('dEp').textContent = '';
+    const bad = t.status==='FAIL';
+    let h = '';
+    const cls = t.status==='PASS'?'pass':t.status==='SKIP'?'skip':t.status==='NA'?'na':'';
+    if(t.category || t.remark || t.reason) h += `<div class="sec"><div class="reason ${cls}">${t.category?'<b>'+esc(t.category)+'</b>':''}${esc(t.remark || t.reason || '')}${t.action?'<div class="act">➜ '+esc(t.action)+'</div>':''}</div></div>`;
+    h += `<div class="sec"><h4>Request URL</h4><div class="urlgrid">
+        <span class="k">Base URL</span><span class="v">${esc(t.baseUrl||'–')}</span><button class="copy" data-copy="${esc(t.baseUrl||'')}">Copy</button>
+        <span class="k">API path</span><span class="v">${esc(t.apiPath||'–')}</span><button class="copy" data-copy="${esc(t.apiPath||'')}">Copy</button>
+        <span class="k">Full URL</span><span class="v full">${esc(t.endpoint||'–')}</span><button class="copy" data-copy="${esc(t.endpoint||'')}">Copy</button>
+        ${t.vapt ? `<span class="k">VAPT ref</span><span class="v">${esc(t.vapt)}</span><span></span>` : ''}
+        ${t.format ? `<span class="k">Format</span><span class="v">${esc(t.format)}</span><span></span>` : ''}
+        ${t.dataSource ? `<span class="k">Data source</span><span class="v" style="white-space:pre-wrap">${esc(t.dataSource)}</span><span></span>` : ''}
+        <span class="k">HTTP</span><span class="v">${t.httpStatus!=null ? 'actual <b>'+t.httpStatus+'</b>' : 'not called'}${t.expectedHttp ? ' &nbsp;·&nbsp; expected <b>'+esc(t.expectedHttp)+'</b>' : ''}${t.httpCheck==='OK' ? ' &nbsp;<span class="ok">✓ standard code</span>' : t.httpCheck==='MISMATCH' ? ' &nbsp;<span style="color:var(--amber);font-weight:700">⚠ not the standard code</span>' : ''}</span><span></span>
+      </div></div>`;
+    if(t.status==='FAIL'){
+      const run = curRun();
+      const steps = `1. Log in${run && run.testedBy ? ' (tested by '+run.testedBy+')' : ''}
+2. Send ${t.method} ${t.endpoint}` + (t.negative && t.testData ? `
+3. Invalid input - ${t.testData}` : '');
+      h += `<div class="sec"><h4>Bug description <button class="copy" data-copy="${esc(bugText(t, run))}" title="Copies this bug (request, expected, actual, fix) for Jira / Teams">📋 Copy for dev</button></h4><div class="box" style="white-space:pre-wrap;font-size:12.5px"><b>${esc(t.tcId)} · ${esc(t.apiName)}</b>
+
+<b>Steps to reproduce</b>
+${esc(steps)}
+
+<b>Expected:</b> ${esc(t.expected||'–')}
+<b>Actual:</b> ${esc(t.actual||'–')}${t.remark ? `
+
+<b>Impact / root cause:</b> ${esc(t.remark)}` : ''}${t.action ? `
+<b>Fix needed:</b> ${esc(t.action)}` : ''}</div></div>`;
+    }
+    h += `<div class="sec"><h4>Expected vs actual</h4><div class="ea">
+            <div class="box exp"><h4>Expected result</h4>${esc(t.expected||'–')}</div>
+            <div class="box act ${bad?'bad':''}"><h4>Actual result</h4>${esc(t.actual||(done(t)?'–':'Executing…'))}</div></div></div>`;
+    if(t.checks && t.checks.length) h += `<div class="sec"><h4>Validation checks ${t.pageName?'· '+esc(t.pageName):''}</h4><table class="checks"><thead><tr><th></th><th>Check</th><th>Expected</th><th>Actual</th></tr></thead><tbody>`
+        + t.checks.map(c => `<tr><td class="${c.pass?'ok':'ko'}">${c.pass?'✔':'✗'}</td><td>${esc(c.name)}</td><td>${esc(c.expected)}</td><td class="mono" style="font-size:11.5px">${esc(c.actual)}</td></tr>`).join('') + '</tbody></table></div>';
+    if(t.aiVerdict) h += `<div class="sec"><h4>AI verification</h4><div class="box"><span class="ai ${t.aiVerdict==='N/A'?'NA':esc(t.aiVerdict)}">${esc(t.aiVerdict)}</span> &nbsp;${esc(t.aiReason||'')}</div></div>`;
+    h += `<div class="sec"><h4>Timing</h4><div class="box">HTTP <b>${t.httpStatus??'–'}</b> · response ${ms(t.timeMs)}${t.executedAt ? ' · executed <b>'+esc(t.executedAt)+'</b>' : ' · started '+clock(t.startedAt)}</div></div>`;
+    if(t.testData) h += `<div class="sec"><h4>Test data (injected values)</h4><pre class="code">${esc(t.testData)}</pre></div>`;
+    if(t.requestHeaders) h += `<div class="sec"><h4>Request headers <span style="text-transform:none;font-weight:400">(token masked)</span></h4><pre class="code">${esc(t.requestHeaders)}</pre></div>`;
+    if(t.request) h += `<div class="sec"><h4>Request ${t.encrypted?'- decrypted (what the test sends)':''}</h4><pre class="code">${esc(t.request)}</pre></div>`;
+    if(t.wireRequest) h += `<div class="sec"><h4>🔒 Request on the network - encrypted</h4><pre class="code">${esc(t.wireRequest)}</pre></div>`;
+    if(t.wireResponse) h += `<div class="sec"><h4>🔒 Response on the network - encrypted</h4><pre class="code">${esc(t.wireResponse)}</pre></div>`;
+    if(t.responseFile && STATIC) h += `<div class="sec"><h4>Full response</h4><a class="btn retry" style="display:inline-block;text-decoration:none" target="_blank" href="${esc(t.responseFile)}">Open full response viewer ↗</a> <span style="color:var(--muted);font-size:12px">tables · tree · raw JSON</span></div>`;
+    if(t.response) h += `<div class="sec"><h4>Response ${t.encrypted?'- decrypted (what the test validates)':''}</h4><pre class="code">${esc(t.response)}</pre></div>`;
+    $('dBody').innerHTML = h;
+  }
+
+  // ───────────────────────── OTP modal ─────────────────────────
+  // soft two-note chime (A5 -> E6) with fade-out, played once when the OTP modal opens
+  function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)();
+    [[880,0,.18],[1318.5,.18,.32]].forEach(([f,at,len]) => { const o=a.createOscillator(), g=a.createGain();
+      o.type='sine'; o.frequency.value=f; o.connect(g); g.connect(a.destination);
+      g.gain.setValueAtTime(0.0001,a.currentTime+at); g.gain.exponentialRampToValueAtTime(0.12,a.currentTime+at+.012);
+      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+at+len); o.start(a.currentTime+at); o.stop(a.currentTime+at+len+.02); });
+  }catch(e){} }
+
+  function renderOtp(){
+    const o = state && state.otp;
+    if(!o){ $('bannerOtp').classList.remove('show'); if(otp.id || document.title.startsWith('🔐')){ $('otpOverlay').classList.remove('show'); otp.id=null; document.title='API Automation Console'; } return; }
+    const r = o.request;
+    if(r.where === 'desktop'){
+      const b = $('bannerOtp');
+      b.textContent = '🔐 OTP needed for ' + r.tcId + ' · ' + r.apiName + ' - enter it in the OTP popup window (it is on top of all windows)'
+        + (r.target ? ' · sent to ' + r.target : '');
+      b.classList.add('show');
+      document.title = '🔐 OTP required - ' + r.tcId;
+      return;
+    }
+    $('bannerOtp').classList.remove('show');
+    if(otp.id !== r.id){
+      otp.id = r.id; otp.req = r; otp.timeout = r.timeoutSeconds || 90; otp.expiredShown = null;
+      $('otpHead').className = 'head' + (r.negative ? ' neg' : '');
+      $('otpTitle').textContent = r.attempt>1 ? 'Enter the OTP again' : 'OTP Verification';
+      $('otpSub').textContent = r.apiName + '  ·  ' + r.tcId;
+      const to = (r.targetLabel||'').replace(' (confirmed by API response)','').toUpperCase();
+      $('otpCards').className = 'cards2' + (r.ovd ? '' : ' one');
+      $('otpCards').innerHTML = (r.ovd ? `<div class="cardx ovd"><div class="k">${esc((r.ovdLabel||'OVD').toUpperCase())}</div><div class="v">${esc(r.ovd)}</div></div>` : '')
+        + `<div class="cardx to"><div class="k">OTP SENT TO · ${esc(to)}</div><div class="v">${esc(r.target||'–')}</div></div>`;
+      $('otpSrv').textContent = r.serverMessage ? 'Server: ' + r.serverMessage : '';
+      $('otpErrBox').style.display = r.error ? 'block' : 'none'; $('otpErrBox').textContent = r.error ? '⚠ ' + r.error : '';
+      $('otpNote').style.display = r.note ? 'block' : 'none'; $('otpNote').textContent = r.note || '';
+      $('otpErr').textContent = '';
+      $('otpInput').value = '';
+      $('otpOverlay').classList.add('show');
+      document.title = '🔐 OTP required - ' + r.tcId;
+      beep();
+      setTimeout(()=>$('otpInput').focus(), 50);
+    }
+    if(!otp.busy) otp.expireAt = now() + o.remainingMs;
+  }
+
+  function otpTick(){
+    if(!otp.id) return;
+    const rem = Math.max(0, otp.expireAt - now());
+    const frac = rem / (otp.timeout*1000);
+    const expired = rem <= 0;
+    const arc = $('otpArc');
+    arc.style.strokeDashoffset = expired ? 289 : 289*(1-frac);
+    arc.style.stroke = expired || frac<.25 ? '#c0392b' : frac<.5 ? '#d68910' : '#1e8449';
+    $('otpSec').textContent = expired ? '0' : Math.ceil(rem/1000);
+    if(otp.expiredShown !== expired){
+      otp.expiredShown = expired;
+      const inp = $('otpInput'); inp.disabled = expired;
+      $('otpBtns').innerHTML = expired ? '' : `<button class="btn skip" data-a="skip">Skip</button><button class="btn ok" data-a="submit">Submit OTP</button>`;
+      $('otpMsg').className = 'msg' + (expired ? ' exp' : '');
+      if(!expired) inp.focus();
+    }
+    const def = (otp.req && otp.req.defaultOtp) || '000000';
+    $('otpMsg').textContent = expired ? 'Time over - closing, default OTP ' + def + ' will be used'
+      : 'Enter the OTP within ' + Math.ceil(rem/1000) + ' s · then default ' + def + ' is used';
+  }
+
+  async function otpAction(action, value){
+    if(!otp.id || otp.busy) return;
+    if(action==='submit'){
+      const v = (value ?? $('otpInput').value).trim();
+      if(!/^[A-Za-z0-9]{4,30}$/.test(v)){ $('otpErr').textContent = v ? 'OTP should be 4 or more letters/digits' : 'Please enter the OTP'; return; }
+      value = v;
+    }
+    otp.busy = true; $('otpErr').textContent = '';
+    try{
+      const res = await fetch('/api/otp', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id:otp.id, action, otp:value})});
+      const j = await res.json().catch(()=>({}));
+      if(!res.ok || !j.ok){ $('otpErr').textContent = j.error || ('Error '+res.status); }
+      else if(action==='retry'){ otp.expireAt = now() + otp.timeout*1000; }
+      else if(action==='expire'){ otp.expireAt = now(); }
+      else if(action!=='retry'){ $('otpMsg').textContent = action==='submit' ? 'OTP submitted ✓' : action==='resend' ? 'Resending OTP…' : 'Skipped'; }
+    }catch(e){ $('otpErr').textContent = 'Cannot reach the test run: '+e.message; }
+    finally{ otp.busy = false; otpTick(); }
+  }
+  $('otpBtns').addEventListener('click', e => { const b=e.target.closest('[data-a]'); if(b) otpAction(b.dataset.a); });
+  $('otpInput').addEventListener('keydown', e => { if(e.key==='Enter') otpAction('submit'); });
+
+  // ───────────────────────── report links (View report / Excel / All reports) ─────────────────────────
+  function baseName(p){ return (p||'').split(/[\\/]/).pop(); }
+  function hubPath(run){ const p = (run.htmlReport||'').split(/[\\/]/); p.pop(); p.pop(); p.pop(); return p.join('\\') + '\\index.html'; }
+  // URL of a file that sits next to the report (recording, screenshot) when the live server serves it
+  function runUrl(run, f){ const u = (run.htmlReportUrl||'').split('/'); u.pop(); return u.join('/') + '/' + encodeURIComponent(f); }
+  function copyText(s, msg){ navigator.clipboard.writeText(s).then(() => toast(msg || 'Copied - paste it in Teams, email or Jira'), () => toast('Copy not allowed by the browser')); }
+  // short text for Teams / email / Jira: run, totals, top failure reasons, first failed tests
+  function summaryText(run){
+    const T = run.tests || [], c = counts(T), ex = c.PASS + c.FAIL, fails = T.filter(t => t.status === 'FAIL');
+    const by = {}; fails.forEach(t => { const k = t.category || 'Other'; by[k] = (by[k] || 0) + 1; });
+    const top = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + ' ' + n).join('; ');
+    const L = [
+      (run.displayName || run.project) + (run.env ? ' · ' + run.env : '') + ' - API automation report',
+      'Run: ' + stamp(run.startedAt) + ' → ' + stamp(run.finishedAt) + ' (' + dur((run.finishedAt || now()) - run.startedAt - (run.pausedTotalMs || 0)) + ')' + (run.testedBy ? ' · Tested by ' + run.testedBy : ''),
+      'Total ' + T.length + ' · Passed ' + c.PASS + ' · Failed ' + c.FAIL + ' · Skipped ' + c.SKIP + ' · Not executable ' + c.NA + ' · Pass rate ' + (ex ? (c.PASS * 100 / ex).toFixed(1) : '0') + '%',
+      top ? 'Top failure reasons: ' + top : 'No failures',
+      '', 'Failed tests' + (fails.length > 15 ? ' (first 15 of ' + fails.length + ')' : '') + ':'
+    ];
+    fails.slice(0, 15).forEach(t => L.push('- ' + t.tcId + ' · ' + t.apiName + ' · HTTP ' + (t.httpStatus != null ? t.httpStatus : '-') + (t.expectedHttp ? ' (expected ' + t.expectedHttp + ')' : '') + ' · ' + (t.category || 'failed') + (t.executedAt ? ' · ' + t.executedAt : '')));
+    L.push('', 'Report: ' + baseName(run.htmlReport));
+    return L.join('\n');
+  }
+  // one failed test as a ready-to-paste bug
+  function bugText(t, run){
+    return ['BUG ' + t.tcId + ' · ' + t.apiName,
+      'Run: ' + (run ? (run.displayName || run.project) + (run.env ? ' · ' + run.env : '') + ' · ' + stamp(run.startedAt) + (run.testedBy ? ' · tested by ' + run.testedBy : '') : ''),
+      'Executed at: ' + (t.executedAt || '-'),
+      'Request: ' + t.method + ' ' + t.endpoint,
+      t.testData ? 'Test data: ' + t.testData : '',
+      'HTTP: actual ' + (t.httpStatus != null ? t.httpStatus : '-') + (t.expectedHttp ? ' · expected ' + t.expectedHttp : ''),
+      'Expected: ' + (t.expected || '-'), 'Actual: ' + (t.actual || '-'),
+      t.remark ? 'Impact / root cause: ' + t.remark : '', t.action ? 'Fix needed: ' + t.action : '', t.vapt ? 'VAPT: ' + t.vapt : ''
+    ].filter(Boolean).join('\n');
+  }
+  function renderReportBar(run){
+    const bar = $('reportBar');
+    if(!run || run.status!=='COMPLETED' || !run.htmlReport){ bar.classList.remove('show'); return; }
+    const name = baseName(run.htmlReport), excel = baseName(run.excelReport);
+    let btns;
+    if(STATIC){        // saved report opened from the folder: plain relative links
+      btns = `<a class="rbtn" href="../../index.html">🗂 All reports</a>` + (excel ? `<a class="rbtn" href="${esc(excel)}">📊 Excel report</a>` : '')
+        + (run.vaptPdf ? `<a class="rbtn" href="${esc(baseName(run.vaptPdf))}">🔒 VAPT report</a>` : '')
+        + (run.failPdf ? `<a class="rbtn" href="${esc(baseName(run.failPdf))}">🐞 Failure report</a>` : '')
+        + (run.recFile ? `<a class="rbtn" href="${esc(run.recFile)}">🎥 Recording</a>` : '');
+    } else if(serverDown){   // run ended, live server closed: links cannot work, so show the paths with Copy buttons
+      const dir = (run.htmlReport||'').split(/[\\/]/).slice(0,-1).join('\\');
+      const rel = p => dir + '\\' + String(p||'').replace(/\//g,'\\');
+      const row = (ic, lbl, path) => path ? `<div class="prow"><span class="pl">${ic} ${lbl}</span><span class="mono pv">${esc(path)}</span><button class="copybtn" data-copyp="${esc(path)}">Copy path</button></div>` : '';
+      const rows = row('📄','HTML report',run.htmlReport) + row('📊','Excel report',run.excelReport) + row('📁','Report folder',dir)
+        + row('🎥','Recording',run.recFile ? rel(run.recFile) : '') + row('🖼','Screenshot',run.recShot ? rel(run.recShot) : '')
+        + row('🔒','VAPT report (PDF)',run.vaptPdf) + row('🐞','Failure report (PDF)',run.failPdf)
+        + row('🗂','All reports',hubPath(run));
+      bar.innerHTML = `<div style="width:100%"><div class="rt">✔ Execution completed - report saved (live server closed)</div><div class="rs">Paste a path in the browser address bar or Explorer to open it</div>${rows}</div>`;
+      bar.classList.add('show'); return;
+    } else {           // live console: the server serves the reports
+      btns = `<a class="rbtn primary" href="${esc(run.htmlReportUrl||'#')}" target="_blank" rel="noopener">📄 View report</a>`
+        + (run.excelReportUrl ? `<button class="rbtn" data-open="excel" data-fallback="${esc(run.excelReportUrl)}" title="Opens the Excel report in Excel">📊 Open Excel</button>` : '')
+        + (run.vaptPdfUrl ? `<button class="rbtn" data-open="vapt" data-fallback="${esc(run.vaptPdfUrl)}" title="VAPT report: every VAPT point with pass / fail / skip / N/A">🔒 VAPT report</button>` : '')
+        + (run.failPdfUrl ? `<button class="rbtn" data-open="failure" data-fallback="${esc(run.failPdfUrl)}" title="Failed tests only, with steps to reproduce, request and response">🐞 Failure report</button>` : '')
+        + `<button class="rbtn" data-open="folder" title="Shows the report folder in Explorer">📁 Open folder</button>`
+        + (run.recFile ? `<a class="rbtn" href="${esc(runUrl(run, run.recFile))}" target="_blank" rel="noopener">🎥 Recording</a>` : '')
+        + `<a class="rbtn" href="${esc(run.hubUrl||'#')}" target="_blank" rel="noopener">🗂 All reports</a>`;
+    }
+    btns += `<button class="rbtn" data-sum="1" title="Copies a short summary to paste into Teams, email or Jira">📋 Copy summary</button>`;
+    bar.innerHTML = `<div><div class="rt">✔ Execution completed - your report is ready</div><div class="rs">${esc(name)} · saved in reports/${esc(run.project)}/</div></div><div class="rb">${btns}</div>`;
+    bar.classList.add('show');
+  }
+  $('reportBar').addEventListener('click', async e => {
+    const cp = e.target.closest('[data-copyp]');
+    if(cp){ navigator.clipboard.writeText(cp.dataset.copyp).then(() => toast('Path copied - paste it in the address bar or Explorer'), () => toast('Copy not allowed by the browser')); return; }
+    if(e.target.closest('[data-sum]')){ const r = curRun(); if(r) copyText(summaryText(r), 'Summary copied - paste it in Teams, email or Jira'); return; }
+    const b = e.target.closest('[data-open]'); if(!b) return;
+    try{
+      const r = await fetch('/api/open', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({what: b.dataset.open})});
+      const j = await r.json().catch(() => ({}));
+      if(j.ok) toast('Opening ' + b.dataset.open + '…');
+      else { toast(j.error || 'Could not open it'); if(b.dataset.fallback) location.href = b.dataset.fallback; }
+    }catch(x){ if(b.dataset.fallback) location.href = b.dataset.fallback; }
+  });
+  $('bannerOff').addEventListener('click', e => { const b = e.target.closest('[data-copyp]'); if(!b) return;
+    navigator.clipboard.writeText(b.dataset.copyp).then(() => toast('Path copied - paste it in the browser address bar'), () => toast('Copy not allowed by the browser')); });
+
+  // ───────────────────────── screen recording ─────────────────────────
+  // Chrome only starts a screen capture after a click + its window picker, so the run waits for "Start recording".
+  const rec = { stream:null, recorder:null, queue:Promise.resolve(), starting:false, finishing:false, stopMsg:null };
+  const hms = ms => { const s = Math.max(0, Math.floor(ms/1000)), h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+    return (h ? String(h).padStart(2,'0')+':' : '') + String(m).padStart(2,'0') + ':' + String(x).padStart(2,'0'); };
+  const recState = (state, message) => fetch('/api/rec?a=state', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({state, message})}).catch(() => {});
+
+  async function recStart(){
+    if(rec.recorder || rec.starting) return;
+    rec.starting = true; $('recGo').disabled = true; $('recErr').textContent = '';
+    try{
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) throw new Error('this browser cannot record the screen - use Chrome or Edge');
+      const stream = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:15}, audio:false, selfBrowserSurface:'include', surfaceSwitching:'include'});
+      const types = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+      const mime = types.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+      const r = new MediaRecorder(stream, mime ? {mimeType:mime, videoBitsPerSecond:2500000} : {videoBitsPerSecond:2500000});
+      rec.stream = stream; rec.recorder = r; rec.queue = Promise.resolve(); rec.finishing = false; rec.stopMsg = null;
+      // the video is streamed to disk every 4 seconds, so nothing is lost if the run or the browser stops
+      r.ondataavailable = e => { if(e.data && e.data.size) rec.queue = rec.queue.then(() => fetch('/api/rec?a=chunk', {method:'POST', body:e.data}).catch(() => {})); };
+      r.onstop = async () => { await rec.queue; await recState('STOPPED', rec.stopMsg); rec.recorder = null; };
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        if(rec.recorder && rec.recorder.state !== 'inactive'){ rec.stopMsg = 'Sharing was stopped from the browser'; rec.recorder.stop(); toast('Screen sharing was stopped - the video saved so far is kept', 5000); }
+      });
+      r.start(4000);
+      await recState('RECORDING');
+    }catch(e){
+      rec.recorder = null; rec.stream = null;
+      $('recErr').textContent = (e && e.name === 'NotAllowedError')
+        ? 'No window was shared. Press Start recording again and pick the Chrome window - or choose "Run without recording".'
+        : 'Could not start the recording: ' + ((e && e.message) || e);
+    }finally{ rec.starting = false; $('recGo').disabled = false; }
+  }
+  async function recShot(){
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = rec.stream;
+    await v.play();
+    if(!v.videoWidth) await new Promise(r => { v.onloadedmetadata = () => r(); setTimeout(r, 2000); });
+    await new Promise(r => setTimeout(r, 400));
+    const c = document.createElement('canvas'); c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    return await new Promise(res => c.toBlob(res, 'image/png'));
+  }
+  // the report is generated -> screenshot of the completed window, stop the recording, toast
+  async function recFinish(){
+    if(!rec.recorder || rec.finishing) return;
+    rec.finishing = true;
+    try{
+      await new Promise(r => setTimeout(r, 3500));            // let the completed screen finish drawing
+      const shot = await recShot().catch(() => null);
+      if(shot) await fetch('/api/rec?a=shot', {method:'POST', headers:{'Content-Type':'image/png'}, body:shot}).catch(() => {});
+      if(rec.recorder && rec.recorder.state !== 'inactive') rec.recorder.stop();
+      rec.stream.getTracks().forEach(t => t.stop());           // closes the browser's "sharing" bar
+      toast('✔ Run completed - recording stopped, screenshot and video saved in this run\'s folder, next to the report', 8000);
+    }catch(e){ toast('Recording stop problem: ' + (e && e.message || e), 6000); }
+  }
+  $('recGo').onclick = recStart;
+  $('recSkip').onclick = () => { recState('SKIPPED', 'Run started without recording'); toast('Running without recording'); };
+  $('shotX').onclick = e => { e.preventDefault(); e.stopPropagation(); $('shotCorner').dataset.closed = '1'; $('shotCorner').classList.remove('show'); };
+  function renderRecording(run){
+    if(!run) return;
+    const st = run.recState || 'OFF';
+    $('recOv').classList.toggle('show', !STATIC && !!run.recEnabled && st === 'WAITING');
+    $('recPill').classList.toggle('show', !STATIC && st === 'RECORDING');
+    if(!STATIC && run.recEnabled && st === 'RECORDING' && run.status === 'COMPLETED') recFinish();
+    // final screenshot in the corner (live console and the saved report)
+    const sc = $('shotCorner');
+    if(run.recShot && !sc.dataset.closed){
+      const src = STATIC ? run.recShot : runUrl(run, run.recShot);
+      if($('shotImg').getAttribute('src') !== src){ $('shotImg').setAttribute('src', src); sc.setAttribute('href', src); }
+      sc.classList.add('show');
+    }
+  }
+
+  // ───────────────────────── TV mode + shortcuts ─────────────────────────
+  function tv(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
+  $('btnTv').onclick = tv;
+  document.addEventListener('keydown', e => {
+    if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName) || $('otpOverlay').classList.contains('show') || e.ctrlKey || e.altKey || e.metaKey) return;
+    const k = e.key.toLowerCase();
+    if(k==='p' && $('btnPause').style.display!=='none'){ e.preventDefault(); $('btnPause').click(); }
+    else if(k==='/'){ e.preventDefault(); $('search').focus(); }
+    else if(k==='t'){ $('btnTheme').click(); }
+    else if(k==='f'){ tv(); }
+  });
+
+  // ───────────────────────── timers ─────────────────────────
+  function tickTime(){
+    const run = curRun();
+    $('clock').textContent = new Date(now()).toLocaleTimeString();
+    { const rr = curRun(); if(rr && rr.recState === 'RECORDING') $('recTime').textContent = hms(now() - rr.recStartedAt); }
+    if(run){ const end = run.finishedAt || (STATIC ? state.serverTime : now()); $('kTime').textContent = dur(end - run.startedAt); }
+  }
+  setInterval(() => { if(!STATIC){ tickTime(); otpTick(); } }, 250);
+
+  if(STATIC){ state = STATIC; render(); } else { poll(); }
+})();
+</script>
+</body>
+</html>
