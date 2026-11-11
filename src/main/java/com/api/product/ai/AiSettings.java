@@ -23,6 +23,23 @@ public final class AiSettings {
     /** Let the model rephrase every assistant answer (costs one model call per chat message). */
     public boolean polish = false;
     public int timeoutSeconds = 180;
+    /** How long to wait when connecting to the model host. 0 = automatic: short for this PC, longer for another machine. */
+    public int connectTimeoutMs = 0;
+
+    /** True when the address points to another machine (not localhost / 127.0.0.1 / ::1). */
+    public static boolean isRemoteUrl(String u) {
+        if (u == null) return false;
+        String h = u.replaceFirst("(?i)^https?://", "").replaceAll("[/?#].*$", "").replaceAll("^.*@", "");
+        if (h.startsWith("[")) h = h.replaceAll("^\\[(.*?)\\].*$", "$1");
+        else h = h.replaceAll(":\\d+$", "");
+        h = h.toLowerCase();
+        return !(h.isEmpty() || h.equals("localhost") || h.equals("127.0.0.1") || h.equals("::1") || h.endsWith(".localhost"));
+    }
+
+    /** Connect timeout actually used (milliseconds). */
+    public int connectMs() {
+        return connectTimeoutMs > 0 ? connectTimeoutMs : (isRemoteUrl(url) ? 4000 : 800);
+    }
 
     private static final ObjectMapper M = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -57,5 +74,6 @@ public final class AiSettings {
         url = url.replaceAll("/+$", "");
         if (model == null || model.isBlank()) model = "auto";
         if (timeoutSeconds < 20 || timeoutSeconds > 900) throw new IllegalArgumentException("Timeout must be between 20 and 900 seconds");
+        if (connectTimeoutMs < 0 || connectTimeoutMs > 30000) throw new IllegalArgumentException("Connect timeout must be 0 (automatic) or up to 30000 ms");
     }
 }

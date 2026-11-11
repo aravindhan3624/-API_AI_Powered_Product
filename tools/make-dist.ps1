@@ -63,8 +63,17 @@ if (Get-ChildItem $out -Recurse -Include "license-private.key","*private*.key" -
 if ($CertThumbprint) {
   Write-Host "signing executables with certificate $CertThumbprint (from the Windows certificate store)"
   $st = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "x64" } | Sort-Object FullName -Descending | Select-Object -First 1
-  if (-not $st) { throw "signtool.exe not found. Install the Windows SDK, or run without -CertThumbprint for an unsigned package." }
-  Get-ChildItem $out -Recurse -Include *.exe,*.dll | ForEach-Object { & $st.FullName sign /sha1 $CertThumbprint /fd SHA256 /tr $TimestampUrl /td SHA256 $_.FullName | Out-Null; if ($LASTEXITCODE -ne 0) { throw "signing failed for $($_.Name)" } }
+  if ($st) {
+    Get-ChildItem $out -Recurse -Include *.exe,*.dll | ForEach-Object { & $st.FullName sign /sha1 $CertThumbprint /fd SHA256 /tr $TimestampUrl /td SHA256 $_.FullName | Out-Null; if ($LASTEXITCODE -ne 0) { throw "signing failed for $($_.Name)" } }
+  } else {
+    Write-Host "signtool.exe not found - using PowerShell Set-AuthenticodeSignature instead"
+    $cert = Get-ChildItem Cert:\CurrentUser\My, Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object { $_.Thumbprint -eq $CertThumbprint } | Select-Object -First 1
+    if (-not $cert) { throw "Certificate $CertThumbprint not found in the Windows certificate store." }
+    Get-ChildItem $out -Recurse -Include *.exe,*.dll | ForEach-Object {
+      $sig = Set-AuthenticodeSignature -FilePath $_.FullName -Certificate $cert -HashAlgorithm SHA256 -TimestampServer $TimestampUrl
+      if (-not $sig.SignerCertificate -or $sig.SignerCertificate.Thumbprint -ne $cert.Thumbprint) { throw "signing failed for $($_.Name): $($sig.StatusMessage)" }
+    }
+  }
 } else { Write-Host "NOTE: package is UNSIGNED (pass -CertThumbprint <thumbprint> once a code-signing certificate is installed)." }
 
 Write-Host "5/5 zip"

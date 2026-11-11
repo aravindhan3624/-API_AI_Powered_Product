@@ -30,7 +30,7 @@ public final class OllamaClient {
     private final HardwareProfile hw;
     /** One request at a time: a modest PC must stay responsive. */
     private final java.util.concurrent.Semaphore gate = new java.util.concurrent.Semaphore(1);
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(800)).build();
+    private volatile HttpClient http;
     private volatile long checkedAt;
     private volatile boolean up;
     private volatile String resolved;
@@ -44,12 +44,23 @@ public final class OllamaClient {
         this.base = base;
         this.configured = model;
         this.hw = hw;
+        this.http = buildHttp(AiSettings.isRemoteUrl(base) ? 4000 : 800);
+    }
+
+    private static HttpClient buildHttp(int connectMs) {
+        return HttpClient.newBuilder().connectTimeout(Duration.ofMillis(connectMs)).build();
+    }
+
+    /** True when the model runs on another machine: waits longer, and the model/threads are not limited by THIS PC's hardware. */
+    public boolean remote() {
+        return AiSettings.isRemoteUrl(base);
     }
 
     public static OllamaClient fromProperties() {
         AiSettings s = AiSettings.load();
         OllamaClient c = new OllamaClient(s.url, s.model);
         c.settings = s;
+        c.http = buildHttp(s.connectMs());
         return c;
     }
 
@@ -62,6 +73,7 @@ public final class OllamaClient {
         this.settings = s;
         this.base = s.url;
         this.configured = s.model;
+        this.http = buildHttp(s.connectMs());
         this.checkedAt = 0;
         this.up = false;
         this.resolved = null;
@@ -99,7 +111,7 @@ public final class OllamaClient {
         checkedAt = now;
         try {
             HttpResponse<String> r = http.send(HttpRequest.newBuilder(URI.create(base + "/api/tags"))
-                    .timeout(Duration.ofMillis(1200)).GET().build(), HttpResponse.BodyHandlers.ofString());
+                    .timeout(Duration.ofMillis(remote() ? 6000 : 1200)).GET().build(), HttpResponse.BodyHandlers.ofString());
             List<String> names = new ArrayList<>();
             if (r.statusCode() == 200) {
                 for (JsonNode m : M.readTree(r.body()).path("models")) names.add(m.path("name").asText());
@@ -123,9 +135,10 @@ public final class OllamaClient {
         }
         String best = null;
         int bestTier = -1;
+        int cap = remote() ? Integer.MAX_VALUE : hw.tier;   // another machine's hardware decides, not this PC's
         for (String n : names) {
             int t = HardwareProfile.tierOf(n);
-            if (t >= 0 && t <= hw.tier && t > bestTier) {
+            if (t >= 0 && t <= cap && t > bestTier) {
                 best = n;
                 bestTier = t;
             }
@@ -162,7 +175,7 @@ public final class OllamaClient {
             opt.put("num_predict", maxTokens);
             if (settings == null || settings.lowPower) {
                 opt.put("num_ctx", 2048);
-                opt.put("num_thread", Math.max(1, Math.min(4, hw.cores / 2)));
+                if (!remote()) opt.put("num_thread", Math.max(1, Math.min(4, hw.cores / 2)));   // this PC's cores; meaningless for another machine
             }
             ArrayNode msgs = body.putArray("messages");
             msgs.addObject().put("role", "system").put("content", system);

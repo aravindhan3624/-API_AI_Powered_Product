@@ -13,6 +13,8 @@
             <class name="com.api.product.GrpcTest"/>
             <class name="com.api.product.TeamAuthTest"/>
             <class name="com.api.product.AiFeaturesTest"/>
+            <class name="com.api.product.AiRemoteConfigTest"/>
+            <class name="com.api.product.DocTemplateTest"/>
         </classes>
     </test>
 </suite>

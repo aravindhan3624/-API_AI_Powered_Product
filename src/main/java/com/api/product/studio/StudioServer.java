@@ -283,6 +283,7 @@ public final class StudioServer {
                     ns.lowPower = ab.path("lowPower").asBoolean(true);
                     ns.polish = ab.path("polish").asBoolean(false);
                     ns.timeoutSeconds = ab.path("timeoutSeconds").asInt(180);
+                    ns.connectTimeoutMs = ab.path("connectTimeoutMs").asInt(0);
                     ns.validate();
                     ns.save();
                     llm.apply(ns);
@@ -403,6 +404,8 @@ public final class StudioServer {
         n.put("lowPower", s == null || s.lowPower);
         n.put("polish", s != null && s.polish);
         n.put("timeoutSeconds", s == null ? 180 : s.timeoutSeconds);
+        n.put("connectTimeoutMs", s == null ? 0 : s.connectTimeoutMs);
+        n.put("remote", llm.remote());
         boolean on = s != null && s.enabled;
         n.put("reachable", on && llm.available());
         n.put("activeModel", on && llm.available() ? llm.model() : "");
